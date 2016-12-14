@@ -71,7 +71,7 @@ removeFstString a (x:xs)
 -- lexicographic order (Strings have < which is a proper lexicographic compare
 srtString :: [String] -> [String]
 srtString [] = []
-srtString xs = m : (srtString (removeFstString m xs)) where m = mnmString xs
+srtString xs = m : srtString (removeFstString m xs) where m = mnmString xs
 
 -- prefex properties
 -- 1. empty arr is prefix of any array
@@ -79,7 +79,7 @@ srtString xs = m : (srtString (removeFstString m xs)) where m = mnmString xs
 prefix :: String -> String -> Bool
 prefix [] xs = True
 prefix (x:xs) [] = False -- if there is element in left it cannot be prefix of empty
-prefix (x:xs) (y:ys) = (x == y) && (prefix xs ys)
+prefix (x:xs) (y:ys) = (x == y) && prefix xs ys
 
 -- ex 1.17 (my solution)
 -- returns whether str1 is a substring of str2
@@ -90,7 +90,7 @@ subString xs (y:ys) = prefix xs (y:ys) || prefix xs ys
 
 -- least prime divisor of n
 ld :: Integer -> Integer
-ld n = ldf 2 n
+ld = ldf 2
 
 -- least prime divisor greater than k of n
 ldf :: Integer -> Integer -> Integer
