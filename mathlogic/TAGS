@@ -1,0 +1,44 @@
+
+./ch1exercises.hs,832
+mnmInt mnmInt3,4
+mnmInt mnmInt4,5
+mxmInt mxmInt11,12
+mxmInt mxmInt12,13
+removeFst removeFst19,20
+removeFst removeFst20,21
+srtInts srtInts26,27
+srtInts srtInts27,28
+srtInts2 srtInts231,32
+srtInts2 srtInts232,33
+count count40,41
+count count41,42
+blowup blowup48,49
+blowup blowup49,50
+mnmString mnmString55,56
+mnmString mnmString56,57
+removeFstString removeFstString61,62
+removeFstString removeFstString62,63
+srtString srtString71,72
+srtString srtString72,73
+prefix prefix78,79
+prefix prefix79,80
+subString subString85,86
+subString subString86,87
+ld ld91,92
+ld ld92,93
+ldf ldf95,96
+ldf ldf96,97
+divides divides102,103
+divides divides103,104
+prime0 prime0106,107
+prime0 prime0107,108
+factors factors114,115
+factors factors115,116
+main main120,121
+main main121,122
+
+./prime.hs,68
+divides divides5,6
+ld ld8,9
+ldf ldf13,14
+prime0 prime019,20

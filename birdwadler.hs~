@@ -1,0 +1,7 @@
+
+
+kk = lines
+
+pp xs ys = xs ++ '\n' ++ ys
+
+myunlines = foldr pp

@@ -1,0 +1,6 @@
+
+
+-- whether n can be divided into d parts , n > d
+-- mathematical notation is d | n which can also be said as
+-- whether d is a divisor of n. If confused about what is a divisor, refer Wikipedia
+divides d n = n `rem` d == 0

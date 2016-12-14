@@ -1,0 +1,29 @@
+
+./sol3.hs,93
+factors factors1,2
+factors factors2,3
+prfac prfac6,7
+prfac prfac7,8
+main main13,14
+
+./sol6.hs,26
+sq sq1,2
+main main3,4
+
+./sol4.hs,101
+isPalindromeString isPalindromeString2,3
+isPalindromeString isPalindromeString3,4
+main main5,6
+
+./sol2.hs,41
+fib fib1,2
+fib fib2,3
+main main8,9
+
+./sol5.hs,198
+divides divides2,3
+dividableByAll dividableByAll5,6
+dividableByAll dividableByAll6,7
+divideableBy20 divideableBy208,9
+findFirstDivisibleByAll findFirstDivisibleByAll10,11
+main main12,13
