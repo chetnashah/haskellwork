@@ -37,6 +37,52 @@ factors factors115,116
 main main120,121
 main main121,122
 
+./ch2exercises.hs,947
+data MyBool MyBool2,3
+data MyBool = MFalse MFalse2,3
+data MyBool = MFalse | MTrue MTrue2,3
+mnot mnot5,6
+mnot mnot6,7
+mAnd mAnd10,11
+MFalse `mAnd`mAnd11,12
+mOr mOr15,16
+MFalse `mOr`mOr16,17
+(=(22,23
+(====>22,23
+x x23,24
+(=====>26,27
+MTrue MTrue27,28
+MFalse MFalse28,29
+(<=<=>31,32
+(<+>)<+>36,37
+frm frm44,45
+frm frm45,46
+valid valid48,49
+valid valid49,50
+valid2 valid253,54
+valid2 valid254,55
+logEquiv2 logEquiv261,62
+logEquiv2 logEquiv262,63
+frma frma67,68
+frmb frmb68,69
+frmc frmc77,78
+contradiction contradiction86,87
+contradiction contradiction87,88
+contradiction2 contradiction290,91
+contradiction2 contradiction291,92
+  | x `mod`mod99,100
+mAll mAll104,105
+mAll mAll105,106
+mAny mAny107,108
+mAny mAny108,109
+mEvery mEvery113,114
+mEvery mEvery114,115
+mSome mSome116,117
+mSome mSome117,118
+mConvert mConvert124,125
+mConvert mConvert125,126
+main main129,130
+
 ./prime.hs,68
 divides divides5,6
 ld ld8,9

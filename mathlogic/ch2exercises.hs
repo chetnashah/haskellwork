@@ -45,6 +45,10 @@ x <+> y | x /= y = MTrue -- bet you didn't know the not equal to operator right?
 frm :: MyBool -> MyBool -> MyBool 
 frm p q = p ==> (q ==> p)
 
+
+valid :: (MyBool -> MyBool) -> MyBool
+valid bf = (bf MTrue) `mAnd` (bf MFalse)
+
 -- valid is a higher order function that takes a formula
 -- and returns if its valid for all possible input variables
 valid2 :: (MyBool -> MyBool -> MyBool) -> MyBool
@@ -75,3 +79,52 @@ frmc p q = p <=> (p <+> q) <+> q
 
 -- now you can directly do 
 -- valid2 frmc
+
+-- exercise 2.15
+-- an opposition to valid that is contradiction
+-- a formula that results false for every possible combination of
+-- boolean variables is a contradiction, say like Fallacy table
+contradiction :: (MyBool -> MyBool) -> MyBool
+contradiction bf = ((bf MTrue) `mOr` (bf MFalse)) <=> MFalse
+
+-- contradiction for formulae of two variables
+contradiction2 :: (MyBool -> MyBool -> MyBool) -> MyBool
+contradiction2 bf = (bf MTrue MTrue) `mOr` (bf MTrue MFalse) `mOr` (bf MFalse MTrue) `mOr` (bf MFalse MFalse)
+
+
+-- Quantifiers as procedures
+-- Well known quantifiers in logic are Universal(all) and Existential(any)
+
+-- a well known predicate, which also acts for set membership
+isEven x
+  | x `mod` 2 == 0 = MTrue
+  | otherwise = MFalse
+
+-- prelude has all and any
+-- note first parameter is a predicate (which is equivalent of testing set membership)
+mAll :: (a -> MyBool) -> [a] -> MyBool
+mAll p = foldr mAnd MTrue . map p
+
+mAny :: (a -> MyBool) -> [a] -> MyBool
+mAny p = foldr mOr MFalse . map p 
+
+-- prelude does not have every and some
+-- difference is they take list/data first and then the predicate
+-- This notation is closer to mathematical notation, i.e. given restricted quantifier, get output of quantified predicate
+mEvery :: [a] -> (a -> MyBool) -> MyBool
+mEvery xs p = mAll p xs
+
+mSome :: [a] -> (a -> MyBool) -> MyBool
+mSome xs p = mAny p xs
+
+-- note, calls to any, all, every, some need not terminate in case of infinite lists
+-- e.g. mEvery [0..] (>=0)
+
+
+-- converts a regular predicate to one which is compatible with MyBool
+mConvert :: (a -> Bool) -> a -> MyBool
+mConvert pred x
+  | pred x = MTrue
+  | otherwise = MFalse
+
+main = putStrLn "Hi world"
