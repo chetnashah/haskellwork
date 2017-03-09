@@ -1,0 +1,25 @@
+
+
+Logging values and chaining with applyLog :
+
+    applyLog :: (a,String) -> (a -> (b,String)) -> (b,String)  
+    applyLog (x,log) f = let (y,newLog) = f x in (y,log ++ newLog)
+
+now define some functions that also log what they do e.g.
+
+doubler y = (y*2, " Doubled ")
+square z = (z*z, " Squared ")
+showval x = (x, " Found " ++ show x)
+
+Now we can chain stuff to see what happened :
+
+ (11, " Initial ") `applyLog` showval `applyLog` square `applyLog` showval `applyLog` doubler `applyLog` showval
+
+(242," Initial Found 11 Squared Found 121 Doubled Found 242")
+
+Since log appending is like a monoidal mappend operation, (++) can be
+generalized to mappend in applyLog definition
+
+So more generalized definition will become
+    applyLog :: (Monoid m) => (a,m) -> (a -> (b,m)) -> (b,m)  
+    applyLog (x,log) f = let (y,newLog) = f x in (y,log `mappend` newLog)  
