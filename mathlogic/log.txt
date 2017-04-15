@@ -1,0 +1,5 @@
+2017-03-19T15:31:53 0 hoogle=delete
+2017-03-19T15:37:05 0 hoogle=intersect
+2017-03-19T16:17:48 0 hoogle=union
+2017-03-19T16:29:06 0 hoogle=intersect
+2017-03-19T17:09:48 0 hoogle=addElem
