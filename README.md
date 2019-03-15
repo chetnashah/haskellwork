@@ -27,6 +27,14 @@ Recommended tool for beginners to manage tools/dependencies/projects.
 * Space ` ` stands for function application.
 * To force execution order, use `()` round parentheses, default execution order is lazy (undetermined depending on runtime)
 
+* `$` vs. `()`: The `$` is for avoiding parantheses. Anything that comes after `$` will be evaluated first.
+e.g. all below are quivalent
+```hs
+putStrLn (show (1 + 1))
+putStrLn $ show (1 + 1)
+putStrLn $ show $ 1 + 1
+```
+
 * function is defined with `=`. i.e.
 A function definition:
 1. starts with the name of the function,
