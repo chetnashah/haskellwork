@@ -1,5 +1,5 @@
 
-Print
+### Print
 
 `putStrLn: IO ()`: IO action that returns unit.
 
@@ -15,3 +15,12 @@ main = do
          putStrLn "Hello" ++ name
 ```
 
+### Reading
+
+When reading, provide a specific type you want to cast to, otherwise it
+will throw error saying `no parse`.
+e.g.
+```hs
+read "3.0" :: Float
+
+```
