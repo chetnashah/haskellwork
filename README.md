@@ -34,6 +34,17 @@ e.g. `(+) 2 6` is same as `2 + 6`
 ### Haskell Stack
 Recommended tool for beginners to manage tools/dependencies/projects.
 
+### Top level expressions
+
+ The interactive environment ghci would lead you to believe that you can punch some expressions into an .hs file and run the thing (in a similar fashion to languages like swift and ruby). This is not the case.
+
+Haskell needs an entrypoint called `main`.
+Instead `module header, import declaration or top-level declaration expected`.
+
+In haskell you can put a top-level binding/declaration e.g. `k = 99`, but you cannot put a top-level expression like `putStrLn "wow`.
+
+
+
 ### Basics
 
 * blocks are indentation based.
@@ -144,3 +155,50 @@ instance Num x where
 ```
 Whenever `x` doesn not confirm to Num,
 we get erros like `No instance for (Num [Char])` etc. when doing `3 + "4"`
+
+5. cons symbol `(:)`
+```hs
+-- :t (:)
+-- (:) :: a -> [a] -> [a]
+```
+
+### Bindings
+
+Using `let` and `where` and `pattern matching` by defining functions,
+We introduced `bindings`. Bindings are essentially names for expressions.
+And cannot be rebound in same scope.
+
+#### let expression
+
+`let` expression kinds of act as a lambda, that introduces `scope`.
+
+`let ... in ...` is an expression, that is, it can be written wherever expressions are allowed.
+
+Scope of bindings declared in let, are only valid till the body of let expression.
+e.g
+```hs
+j = 4
+main = do
+  let k = 2
+  let u = 4 in
+    putStrLn $ show $ k + j + u
+  putStrLn $ show k
+  putStrLn $ show j
+  -- putStrLn $ show u -- u not in scope
+```
+
+Multiline `let` can be achieved by using careful indentation:
+```hs
+up arg1 =
+  let p = 22
+      t = 11
+      in putStrLn $ show $ p + t
+
+-- up 0
+-- 33
+```
+
+**let without `in`**: introduces binding in the current scope.
+
+
+#### where bindings vs let bindings
