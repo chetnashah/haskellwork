@@ -162,6 +162,12 @@ we get erros like `No instance for (Num [Char])` etc. when doing `3 + "4"`
 -- (:) :: a -> [a] -> [a]
 ```
 
+6: putStrLn
+```hs
+-- putStrLn :: String -> IO ()
+```
+
+
 ### Bindings
 
 Using `let` and `where` and `pattern matching` by defining functions,
