@@ -164,9 +164,15 @@ we get erros like `No instance for (Num [Char])` etc. when doing `3 + "4"`
 
 6: putStrLn
 ```hs
--- putStrLn :: String -> IO ()
+-- putStrLn :: St
+String -> IO ()
 ```
 
+7. getLine
+```hs
+-- getLine :: IO String
+-- value from an IO is extracted using <-
+```
 
 ### Bindings
 
