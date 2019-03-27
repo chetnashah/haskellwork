@@ -214,3 +214,14 @@ up arg1 =
 
 
 #### where bindings vs let bindings
+
+
+### IO Actions
+
+An IO Action has the type `IO t`.
+
+Actions can be created, assigned, and passed anywhere. However, they may only be performed (executed) from within another I/O action
+
+main itself is an I/O action with type `IO ()`
+
+Performing (executing) an action of type `IO t` may perform I/O and will ultimately deliver a result of type `t`
