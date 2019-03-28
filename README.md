@@ -225,3 +225,43 @@ Actions can be created, assigned, and passed anywhere. However, they may only be
 main itself is an I/O action with type `IO ()`
 
 Performing (executing) an action of type `IO t` may perform I/O and will ultimately deliver a result of type `t`
+
+### File IO
+
+`import System.IO` is necessary.
+
+`Handle` is the core class that represents file handle.
+`openFile :: FilePathString -> IOMode -> IO Handle` i.e. returns handle given file path and IO Mode.
+`hGetLine :: Handle -> IO String`.
+`hGetContents :: Handle -> IO String`.
+`hIsEOF :: Handle -> IO Bool`.
+Always close your file handles with `hClose`
+```hs
+        fHandle <- openFile "testdata.txt" ReadMode
+        ln <- hGetLine fHandle
+        putStrLn ln
+        hClose fHandle
+
+        -- get all content in file using hGetContents
+        fH2 <- openFile "good_data.txt" ReadMode
+        allContent <- hGetContents fH2
+        putStrLn allContent
+        hClose fH2
+```
+
+Write to handle is done via `hPutStrLn`
+`hPutStrLn :: Handle -> String -> IO ()`
+
+In Haskell, `return` is the opposite of `<-`. That is, return takes a pure value and wraps it inside `IO`.
+
+`return` is used to wrap data in a monad. When speaking about I/O, `return` is used to take pure data and bring it into the IO monad
+
+There are three well known pre defined handles in `System.IO`:
+```hs
+stdin :: Handle
+stdout :: Handle
+stderr :: Handle
+getLine = hGetLine stdin
+putStrLn = hPutStrLn stdout
+print = hPrint stdout
+```
