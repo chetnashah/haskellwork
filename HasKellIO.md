@@ -24,3 +24,9 @@ e.g.
 read "3.0" :: Float
 
 ```
+
+### Better Text IO with `Data.IO`
+
+Helps with strict reading.
+
+http://hackage.haskell.org/package/text-1.2.3.1/docs/Data-Text-IO.html#g:2

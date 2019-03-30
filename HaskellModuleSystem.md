@@ -29,3 +29,9 @@ To export no names at all (which is rarely useful), we write an empty export lis
 -- file: ch05/Exporting.hs
 module ExportNothing () where
 ```
+
+
+### Build system
+
+https://lexi-lambda.github.io/blog/2018/02/10/an-opinionated-guide-to-haskell-in-2018/
+

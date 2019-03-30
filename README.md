@@ -174,6 +174,15 @@ String -> IO ()
 -- value from an IO is extracted using <-
 ```
 
+8. `sequence` in `Control.Monad`
+Converting traversable monads to monadic traversable.
+```hs
+-- sequence :: (Traversable t, Monad m) =>
+-- t (m a) -> m (t a)
+-- e.g. [IO Char] -> IO [Char]
+```
+
+
 ### Bindings
 
 Using `let` and `where` and `pattern matching` by defining functions,
@@ -212,6 +221,16 @@ up arg1 =
 
 **let without `in`**: introduces binding in the current scope.
 
+### when to use a `do` block?
+
+When doing a bunch of computation, and then returning a value via `return`. We need to combine all of it into a single expression via `do` block.
+Especially useful in `let declarations in expression`.
+or `resultExpression` in
+```hs
+case expression of pattern -> resultExpression
+                   pattern -> resultExpression
+                   pattern -> resultExpression
+```
 
 #### where bindings vs let bindings
 
@@ -265,3 +284,46 @@ getLine = hGetLine stdin
 putStrLn = hPutStrLn stdout
 print = hPrint stdout
 ```
+
+### Program to combine contents of files in current directory
+
+```hs
+import System.IO
+import System.Directory
+import Data.Text
+
+getFileContents :: String -> IO String
+getFileContents fileName = do
+  case fileName of
+    -- ignoring directories
+    "." -> return ("")
+    ".." -> return ("..")
+    ".ghc" -> return (".ghc")
+    -- for regular files
+    otherwise -> do
+      fH <- openFile fileName ReadMode
+      contents <- hGetContents fH
+      let copycontent = contents
+      return (copycontent)
+
+main = do
+        putStrLn "Greetings! what is your name?"
+        inpStr <- getLine
+        putStrLn $ "Welcome to haskell, " ++ inpStr ++ "!"
+        
+        dirs <- getDirectoryContents "."
+        mapM_ putStrLn dirs
+        let allContentIO = (Prelude.map getFileContents dirs) in
+          do
+            let allContent = (sequence allContentIO) in
+              do
+                allContentString <- allContent
+                mapM_ putStrLn allContentString
+```
+
+### sequence is usefule when dealing with monad arrays
+
+```hs
+sequence  :: Monad m => [m a] -> m [a]
+```
+
