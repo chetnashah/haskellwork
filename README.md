@@ -98,6 +98,159 @@ isEq :: (Eq a, Eq b, a ~ b) => a -> b -> Bool
 isEq x y = x == y
 ```
 
+### User defined data types
+
+There are three main ways:
+1. Algebraic data types, using `data` keyword
+2. Type synonym declarations using `type` keyword
+3. Datatype renamings using `newtype` keyword
+
+#### Algebraic data types uisng `data`
+
+```
+topdecl	→	data [context =>] simpletype [= constrs] [deriving]
+```
+The parts in brackets are optional
+An example is
+```hs
+  data Maybe a = Just a | Nothing
+```
+An example with context/constraint is 
+```hs
+  data Eq a => Set a = NilSet | ConsSet a (Set a)
+```
+The definition also involves constructors
+```
+simpletype	→	tycon tyvar1 … tyvark	    (k ≥ 0) // Maybe is a type constructor and a is a typevar in above defition
+ 
+constrs	→	constr1 | … | constrn	    (n ≥ 1)     // data constructors always appear after equals "=" e.g. Just, Nothing
+
+constr	→	con [!] atype1 … [!] atypek	    (arity con  =  k, k ≥ 0)
+        |	(btype | ! atype) conop (btype | ! atype)	    (infix conop)
+        |	con { fielddecl1 , … , fielddecln }	    (n ≥ 0)
+
+fielddecl	→	vars :: (type | ! atype)
+ 
+deriving	→	deriving (dclass | (dclass1, … , dclassn))	    (n ≥ 0)
+
+```
+
+An algebraic datatype declaration has the form: `data cx => T u1 … uk = K1 t11 … t1k1 | ⋅⋅⋅ | Kn tn1 … tnkn` where `cx` is a context. This declaration introduces a new `type constructor T` with zero or more constituent `data constructors K1, …, Kn`.
+
+Here `tij` could be `type variables` or `type constants`.
+
+The type variables `u1 through uk` must be distinct and may appear in `cx` and the `tij`; it is a static error for any other type variable to appear in `cx` or on the right-hand-side.
+
+Another example:
+```hs
+data Shape = Circle Float Float Float | Rectangle Float Float Float Float
+
+data Person = Person { firstName :: String  
+                     , lastName :: String  
+                     , age :: Int  
+                     , height :: Float  
+                     , phoneNumber :: String  
+                     , flavor :: String  
+                     } deriving (Show)
+```
+
+`Field Labels`: 
+For large datatypes it is useful to assign field labels to the components of a data object. This allows a specific field to be referenced independently of its location within the constructor.
+
+The arguments to the positional constructor occur in the same order as the labeled fields. For example, the declaration
+```hs
+  data C = F { f1,f2 :: Int, f3 :: Bool }
+```
+defines a type and constructor identical to the one produced by
+```hs
+  data C = F Int Int Bool
+```
+
+You can now access values with labels as functions e..g
+```
+k = F 2 4 True
+(f1 k) // prints 2
+(f2 k) // prints 4
+(f3 k) // prints True
+:t k // prints C
+```
+```hs
+-- define data type using records
+data Car = Car {company :: String, model :: String, year :: Int} deriving (Show)
+
+-- create values with Constructors with records with label"="value
+ghci> Car {company="Ford", model="Mustang", year=1967}
+
+-- destructuring with record/labels
+tellCar :: Car -> String  
+tellCar (Car {company = c, model = m, year = y}) = "This " ++ c ++ " " ++ m ++ " was made in " ++ show y
+```
+
+Field names share the top level namespace with ordinary variables and class methods and must not conflict with other top level names in scope.
+
+The pattern `F {}` matches any value built with constructor `F`, whether or not `F` was declared with record syntax.
+
+#### Type synonym declarations via `type`
+
+```
+type tycon tyvar1 .. tyvark = existingtype
+```
+
+It has the form type `T u1 … uk = t` which introduces a new type constructor, `T` . The type `(T t1 …tk)` is equivalent to the type `t[t1∕u1, …, tk∕uk]`. The type variables `u1 through uk` must be distinct and are scoped only over t; it is a static error for any other type variable to appear in t. The kind of the new type constructor `T` is of the form `κ1 →… → κk → κ` where the kinds `κi` of the arguments `ui` and `κ` of the right hand side `t` are determined by kind inference.
+
+Recursive type synonyms are not allowed i.e.
+```hs
+  type Rec a   =  [Circ a]        -- invalid  
+  type Circ a  =  [Rec a]         -- invalid
+```
+
+#### Datatype renamings via `newtype`
+
+When using newtype, you're restricted to just one constructor with one field.(See `N` and `t` below)
+
+A declaration of the form `newtype cx => T u1 … uk = N t` introduces a new type whose representation is the same as an existing type. The type `(T u1… uk)` renames the datatype `t`.
+
+YOu can think of `N` as NewConstructor.
+The constructor `N` in an expression coerces a value from type `t` to type `(T u1 … uk)`. 
+Using `N` in a pattern coerces a value from type `(T u1 … uk)` to type `t`.
+
+Unlike algebraic datatypes, the newtype constructor `N` is unlifted, so that `N ⊥` is the same as `⊥`.
+
+
+
+The following examples clarify the differences between data (algebraic datatypes), type (type synonyms), and newtype (renaming types.) Given the declarations
+```hs
+  data D1 = D1 Int  
+  data D2 = D2 !Int  
+  type S = Int  
+  newtype N = N Int  
+  d1 (D1 i) = 42  
+  d2 (D2 i) = 42  
+  s i = 42  
+  n (N i) = 42
+```
+the expressions `(d1 ⊥)`, `(d2 ⊥)` and `(d2 (D2 ⊥))` are all equivalent to `⊥`, whereas `(n ⊥)`, `(n (N ⊥))`, `(d1 (D1 ⊥))` and `(s ⊥)` are all equivalent to `42`. In particular, `(N ⊥)` is equivalent to `⊥` while `(D1 ⊥)` is not equivalent to `⊥`.
+
+Both newtype and the single-constructor data introduce a single value constructor, but the value constructor introduced by newtype is strict and the value constructor introduced by data is lazy. So if you have
+```hs
+data D = D Int
+newtype N = N Int
+```hs
+Then `N undefined` is equivalent to `undefined` and causes an error when evaluated. But `D undefined` is not equivalent to undefined, and it can be evaluated as long as you don't try to peek inside.
+
+
+
+A newtype declaration may use field-naming syntax, though of course there may only be one field. Thus:
+```hs
+  newtype Age = Age { unAge :: Int }
+```
+brings into scope both a constructor and a de-constructor:
+```hs
+  Age   :: Int -> Age  
+  unAge :: Age -> Int
+```
+
+
 
 ### Kinds
 
