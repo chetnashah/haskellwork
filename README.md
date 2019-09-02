@@ -98,6 +98,67 @@ isEq :: (Eq a, Eq b, a ~ b) => a -> b -> Bool
 isEq x y = x == y
 ```
 
+
+### Kinds
+
+To ensure that they are valid, type expressions are classified into different kinds, which take one of two possible forms:
+
+The symbol `∗` represents the kind of all nullary type constructors.
+
+Char, Int, Integer, Float, Double and Bool are type constants with kind `∗`.
+
+If `κ1` and `κ2` are kinds, then `κ1 → κ2` is the `kind of types` that `take a type of kind κ1` and `return a type of kind κ2`.
+
+Maybe and IO are unary type constructors, and treated as types with kind `∗ → ∗`
+
+1. The trivial type is written as `()` and has `kind ∗`. It denotes the `nullary tuple` type, and has exactly one value, also written (). (think already a concrete type)
+2. The function type is written as `(->)` and has kind `∗ → ∗ → ∗`. (think that it takes two concrete types and returns a new concrete function type)
+3. The list type is written as `[]` and has kind `∗ → ∗`. (think it takes a concrete type and returns the concrete array type)
+4. The tuple types are written as `(,)`, `(,,)`, and so on. Their kinds are `∗→∗→∗`, `∗→∗→∗→∗`, and so on.
+5. `Type application`: Type application. If `t1` is a type of kind `κ1 → κ2` and `t2` is a type of kind `κ1`, then `t1 t2` is a type expression of kind `κ2`.
+6. A parenthesized type, having form `(t)`, is identical to the type `t`.
+
+
+
+Kind inference checks the validity of type expressions in a similar way that type inference checks the validity of value expressions. However, unlike types, kinds are entirely implicit and are not a visible part of the language
+
+### Operators
+
+An operator is a function that can be applied using infix syntax (Section 3.4), or partially applied using a section (Section 3.5).
+
+An operator is either an operator symbol, such as + or $$, or is an ordinary identifier enclosed in grave accents (backquotes), such as ` op `. For example, instead of writing the prefix application op x y, one can write the infix application x` op ` y. If no fixity declaration is given for ` op ` then it defaults to highest precedence and left associativity 
+
+Dually, an operator symbol can be converted to an ordinary identifier by enclosing it in parentheses. For example, `(+) x y` is equivalent to `x + y`, and `foldr (⋆) 1 xs` is equivalent to `foldr (\x y -> x⋆y) 1 xs`.
+
+
+
+### Values and types
+
+An expression evaluates to a value and has a static type. 
+Values and types are not mixed in Haskell. 
+
+However, the type system allows user-defined datatypes of various sorts, and permits not only parametric polymorphism (using a traditional Hindley-Milner type structure) but also ad hoc polymorphism, or overloading (using type classes).
+
+Errors in Haskell are semantically equivalent to ⊥ (“bottom”). Technically, they are indistinguishable from nontermination, so the language includes no mechanism for detecting or acting upon errors.
+
+### Namespaces
+
+There are six kinds of names in Haskell: those for `variables` and `constructors` denote values; those for `type variables`, `type constructors`, and `type classes` refer to entities related to the type system; and `module` names refer to modules. There are two constraints on naming:
+
+1. `Names for variables and type variables are identifiers` beginning with `lowercase letters or underscore`; 
+the `other four kinds of names` are identifiers beginning with `uppercase letters`.
+
+2. An `identifier must not be used as the name of a type constructor and a class` in the same scope.
+These are the only constraints; for example, Int may simultaneously be the name of a module, class, and constructor within a single scope.
+
+### Function application and definition
+
+Function application is written `e1 e2`. 
+Application associates to the left, so the parentheses may be omitted in `(f x) y`. Because e1 could be a data constructor, partial applications of data constructors are allowed.
+
+Lambda abstractions are written `\ p1 … pn -> e`, where the `pi` are patterns. An expression such as `\x:xs->x` is syntactically incorrect; it may legally be written as `\(x:xs)->x`.
+
+
 ### Runtime exceptions
 
 1. non total functions - usually warned during compilation by non-exhaustive
@@ -189,11 +250,25 @@ Using `let` and `where` and `pattern matching` by defining functions,
 We introduced `bindings`. Bindings are essentially names for expressions.
 And cannot be rebound in same scope.
 
+### Reverse thin arrow operator `<-`
+
+In case of List comprehensions and case guards,
+`<-` means a pattern match.
+
+In case of mondadic values, `<-` means run an action.
+
 #### let expression
 
 `let` expression kinds of act as a lambda, that introduces `scope`.
 
 `let ... in ...` is an expression, that is, it can be written wherever expressions are allowed.
+
+Let unlike in other languages, is lazy in haskell,
+
+Below code does not cause error until x or y is evaluated.
+```hs
+let (x,y) = undefined in e
+```
 
 Scope of bindings declared in let, are only valid till the body of let expression.
 e.g
@@ -231,6 +306,21 @@ case expression of pattern -> resultExpression
                    pattern -> resultExpression
                    pattern -> resultExpression
 ```
+
+### List comprehensions
+
+A list comprehension has the form `[ e | q1, ..., qn ], n>=1`, where the qi qualifiers are either
+
+1. generators of the form `p <- e`, where `p` is a pattern (see Section 3.17) of `type t` and `e` is an expression of `type [t]`
+2. guards, which are arbitrary expressions of type Bool
+3. local bindings that provide new definitions for use in the generated expression e or subsequent guards and generators.
+
+Such a list comprehension returns the list of elements produced by evaluating e in the successive environments created by the nested, depth-first evaluation of the generators in the qualifier list. Binding of variables occurs according to the normal pattern matching rules (see Section 3.17), and if a match fails then that element of the list is simply skipped over. Thus: 
+```hs
+[ x |  xs   <- [ [(1,2),(3,4)], [(5,4),(3,2)] ], 
+      (3,x) <- xs ]
+```
+gives `[4,2]`.
 
 #### where bindings vs let bindings
 
