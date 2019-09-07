@@ -7,6 +7,10 @@ ghci is repl for haskell
 * use `:k` variable to get kind
 * use `:i` binding to get info on binding
 * use `:l` filename to load `.hs` file into repl
+* To return to the Prelude> prompt,
+use the command `:m`, which is short for :module. This will unload the
+file from GHCi, so the code in that file will no longer be in scope in
+your REPL
 
 faster docs is accessed by SPC m h H
 
@@ -21,6 +25,20 @@ prelude>:{
 
 * The `it` value in ghci: `it` is the last evaluated expression in ghci.
 
+We need to use `let` in order to declare variables in REPL, but it is not required in file.
+
+### Stack project
+
+Needs to have a `Main.hs` module with a main declaration, which will be entry point for the project/app
+
+`Note`: you can load modules in `gchi` optionally without having a main block.
+
+### Effects in haskell/fp
+
+1. printing/rendering
+2. Network requests
+3. Hardware events
+
 
 ### Prefix and infix functions
 
@@ -30,6 +48,14 @@ All functions are prefix functions by default and calling syntax is
 To use an infix function, you put it at first position with paranthenses
 e.g. `(+) 2 6` is same as `2 + 6`
 
+## Sectioning
+
+Sectioning is a concise way to partially apply arguments to infix operators.
+
+```hs
+(++ "ing") "sleep"
+(++ "ing") "walk"
+```
 
 ### Haskell Stack
 Recommended tool for beginners to manage tools/dependencies/projects.
@@ -75,6 +101,15 @@ e.g.
 
 * Order of evaluation is present in `do`.
 
+### Evaluation orders in lambda calculus
+
+1. Normal order: Evaluate leftmost, outermost lambdas first, there is a possibility to apply functions before evaluating arguments. similar to call by name but call by name does not evaluate inside the body of an unapplied function.
+
+2. Applicative order: Evaluate leftmost, innermost lambdas first, i.e. strategy in which the arguments of a function are evaluated from left to right in a post-order traversal of reducible expressions (redexes). Also known as call by value.
+
+3. Lazy evaluation: Call by need is a memoized variant of call by name where, if the function argument is evaluated, that value is stored for subsequent uses.
+
+
 ### Reading error messages
 
 Understanding bottom-up typechecking and unification can help in polymorphic cases.s
@@ -104,6 +139,7 @@ There are three main ways:
 1. Algebraic data types, using `data` keyword
 2. Type synonym declarations using `type` keyword
 3. Datatype renamings using `newtype` keyword
+4. Generalized Algebraic data types `GADTs` with `data + where` keywords
 
 #### Algebraic data types uisng `data`
 
@@ -250,6 +286,16 @@ brings into scope both a constructor and a de-constructor:
   unAge :: Age -> Int
 ```
 
+#### Generalized algebraic data types GADTs
+
+
+```hs
+data Maybe a where
+   Nothing  :: Maybe a
+   Just :: a -> Maybe a
+```
+This syntax is made available by the language option `{-#LANGUAGE GADTs #-}`. It should be familiar to you in that it closely resembles the syntax of type class declarations. It's also easy to remember if you already like to think of constructors as just being functions. Each constructor is just defined by a type signature.
+
 
 
 ### Kinds
@@ -277,7 +323,15 @@ Kind inference checks the validity of type expressions in a similar way that typ
 
 ### Operators
 
-An operator is a function that can be applied using infix syntax (Section 3.4), or partially applied using a section (Section 3.5).
+Functions in Haskell default to prefix syntax, meaning that the function being applied is at the beginning of the expression rather than
+the middle.
+
+An operator is a function that can be applied using infix syntax, or partially applied using a section (Section 3.5).
+
+One can use a prefix function in infix style by wrapping it in backticks. And one can use an infix operator in prefix style by wrapping it in parentheses.
+
+Know more about operators using `:i`, e.g. `:i (*)`
+The `infixl` in the output signifies that it is an infix operator and left associative
 
 An operator is either an operator symbol, such as + or $$, or is an ordinary identifier enclosed in grave accents (backquotes), such as ` op `. For example, instead of writing the prefix application op x y, one can write the infix application x` op ` y. If no fixity declaration is given for ` op ` then it defaults to highest precedence and left associativity 
 
@@ -408,7 +462,8 @@ And cannot be rebound in same scope.
 In case of List comprehensions and case guards,
 `<-` means a pattern match.
 
-In case of mondadic values, `<-` means run an action.
+In case of mondadic values, `<-` means run an action or thing of it as unwrapping a monad value,
+equivalent to `>>=` in a normal expression.
 
 #### let expression
 
@@ -447,7 +502,22 @@ up arg1 =
 -- 33
 ```
 
-**let without `in`**: introduces binding in the current scope.
+**let without `in`**: introduces binding in the current scope. Also known as `let-statement`.
+e.g.
+```hs
+do statements
+    let variable = exp -- variable binding available inside do block
+    statements
+```
+
+### Let vs Where
+
+Let and Where are fundamentally different.
+
+`Let introduces an expression` hence we say `let expression` can be used wherever an expression is expected.
+
+`Where is a declaration` that bounds to a surrounding construct.
+
 
 ### when to use a `do` block?
 
@@ -462,7 +532,7 @@ case expression of pattern -> resultExpression
 
 ### List comprehensions
 
-A list comprehension has the form `[ e | q1, ..., qn ], n>=1`, where the qi qualifiers are either
+A list comprehension has the form `[ e | q1, ..., qn ], n>=1`, where the `qi` qualifiers are either
 
 1. generators of the form `p <- e`, where `p` is a pattern (see Section 3.17) of `type t` and `e` is an expression of `type [t]`
 2. guards, which are arbitrary expressions of type Bool
