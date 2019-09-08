@@ -450,6 +450,25 @@ Converting traversable monads to monadic traversable.
 -- e.g. [IO Char] -> IO [Char]
 ```
 
+### Numerics
+
+Data Types: `Int`, `Float`, `Double`, `Rational` are data types where as
+
+`Typeclasses`: `Real`, `Num`, `Integral`, `Fractional` are type classes
+
+Operators under `Num`: `(+)`, `(-)`, `(*)`, `(/)`, Members are: `Integer, Int, Float, Double`
+
+Operators under `Integral`: `quot`, `div`, `mod`, `rem`, `toInteger`, Members of this typcleassSs: `Int, Integer`.
+
+Operators under `Real`: `toRational`, Members: `Integer, Int, Float, Double`
+
+#### Integer vs Int?
+
+`Integer` is for BigIntegers i.e. it can hold arbitrary large integers in the sense of natural numbers.
+
+`Int` is bounded by Int64 i.e. range `-9223372036854775808..9223372036854775807`
+
+Other integers with smaller ranges are `Int8`, `Int16`, `Int32` and `Int64` which are availble under importing `GHC.Int`. and are also members of `Bounded` type class.
 
 ### Bindings
 
