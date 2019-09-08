@@ -1,4 +1,6 @@
 module Print1 where
 
-    main :: IO ()
-    main = putStrLn "hello world!"
+let k = (/) 6 2
+
+main :: IO ()
+main = putStrLn "hello world!"

@@ -338,6 +338,44 @@ An operator is either an operator symbol, such as + or $$, or is an ordinary ide
 Dually, an operator symbol can be converted to an ordinary identifier by enclosing it in parentheses. For example, `(+) x y` is equivalent to `x + y`, and `foldr (⋆) 1 xs` is equivalent to `foldr (\x y -> x⋆y) 1 xs`.
 
 
+### Tuples
+
+Combines multiple values into a single value.
+Same syntax is the type constructor as well as data constructor: `(,)`
+
+`(,)` is a data constructor for tuples.
+
+`(,) 8 "hi"` generates a tuple `(8, "hi")`
+
+One cannot partially applied variable binding using `(,)`,
+E.g. `(,) 1` will throw error.
+
+```hs
+data (,) a b = (,) a b -- as there are two different typevars, tuple can be made of two different concrete-types 
+fst :: (a, b) -> a
+snd :: (a, b) -> b
+
+-- multi tuple constructors are weird!!
+(, , ,) 1 2 3 4
+-- output: (1, 2, 3, 4)
+```
+
+Utilities present in `Data.Tuple`
+
+### Lists
+
+Define as:
+```hs
+data [] a = [] | a : [a] -- involves cons constructor (:)
+```
+From the type definition, restriction on the typevar is list
+allows only elements of single parametric type `a`
+
+Note: We can see `[]` in both terms and types, i.e. it acts as both
+a data constructor and type constructor respectively.
+
+Referencing `length` on a list is generally bad idea being `O(n)`
+as it is traversing whole list to give answer.
 
 ### Values and types
 
@@ -456,11 +494,18 @@ Data Types: `Int`, `Float`, `Double`, `Rational` are data types where as
 
 `Typeclasses`: `Real`, `Num`, `Integral`, `Fractional` are type classes
 
-Operators under `Num`: `(+)`, `(-)`, `(*)`, `(/)`, Members are: `Integer, Int, Float, Double`
+Operators under `Num`: `(+)`, `(-)`, `(*)`, Members are: `Integer, Int, Float, Double`. Note how fractional division `(/)` is not a part of `Num`, since it may not satisfy `a -> a -> a` required by `Num`. See `Fractional`.
 
 Operators under `Integral`: `quot`, `div`, `mod`, `rem`, `toInteger`, Members of this typcleassSs: `Int, Integer`.
 
 Operators under `Real`: `toRational`, Members: `Integer, Int, Float, Double`
+
+Operators under `Fractional` -> `(/)`, `recip`, `fromRational`. Members are: `Float`, `Double`. Since `Int` is not a member of `Fractional` type class, `/` operator does not work on `Int`. One has to do something before it.
+
+
+Defaulting: "I need a type (a) with (Num a => a) and (Fractional a => a). (Fractional a) requires (Num a) already, so that part is redundant and I can proceed with just the (Fractional a)". it picks a reasonable instance of Fractional via defaulting, which gives it Double.
+
+https://stackoverflow.com/questions/42820603/why-can-a-num-act-like-a-fractional
 
 #### Integer vs Int?
 
