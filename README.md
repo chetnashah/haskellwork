@@ -517,7 +517,15 @@ Operators under `RealFrac` : `properFraction`, `truncate`, `round`, `ceiling`, `
 
 Operators under `Floating`: `pi`, `exp`, `log`, `sqrt`, `**`, `sin,cos,tan,etc`. Instances/members of floating are `Float` and `Double`.
 
+`Ratio`: It is made of Integral number pair
+`data (Integral a) => Ratio a = a % a`, Also `type Rational = Ratio Integer`. Import can be done via `Data.Ratio`.
+
+`Complex`: Made of RealFloat number pair
+
 Defaulting: "I need a type (a) with (Num a => a) and (Fractional a => a). (Fractional a) requires (Num a) already, so that part is redundant and I can proceed with just the (Fractional a)". it picks a reasonable instance of Fractional via defaulting, which gives it Double.
+
+
+![Numeric type class hierarchy](./images/typeclasshierarchy.png)
 
 https://stackoverflow.com/questions/42820603/why-can-a-num-act-like-a-fractional
 
