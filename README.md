@@ -490,7 +490,15 @@ Converting traversable monads to monadic traversable.
 
 ### Numerics
 
+When we query the types of numeric values, we see typeclass
+information instead of a concrete type, because the compiler doesn’t
+know which specific numeric type a value is until the type is either
+declared or the compiler is forced to infer a specific type based on
+the function.
+
 Data Types: `Int`, `Float`, `Double`, `Rational` are data types where as
+
+Four sorts of nubmer: `Integral`, `RealFloat`, `Ratio`, `Complex`. This is not finely demarcated though. It is for our understanding.  `Integral` and `RealFloat` are type classes.
 
 `Typeclasses`: `Real`, `Num`, `Integral`, `Fractional` are type classes
 
@@ -498,10 +506,16 @@ Operators under `Num`: `(+)`, `(-)`, `(*)`, Members are: `Integer, Int, Float, D
 
 Operators under `Integral`: `quot`, `div`, `mod`, `rem`, `toInteger`, Members of this typcleassSs: `Int, Integer`.
 
+Operators under `RealFloat`: `floatRadix`, `floatDigits`, `floatRange`, `decodeFloat`, `encodeFloat`, `exponent`, `significand`, `scaleFloat`, `isNaN`, `isInfinite`, `isDenormalized`, `isNegativeZero`, `isIEEE`, `atan2`. Members of RealFloat are `Float`, `Double`.
+`RealFloat` extends upon `RealFrac` and `Floating`
+
 Operators under `Real`: `toRational`, Members: `Integer, Int, Float, Double`
 
 Operators under `Fractional` -> `(/)`, `recip`, `fromRational`. Members are: `Float`, `Double`. Since `Int` is not a member of `Fractional` type class, `/` operator does not work on `Int`. One has to do something before it.
 
+Operators under `RealFrac` : `properFraction`, `truncate`, `round`, `ceiling`, `floor`. Instances/members of `RealFrac` are `Float` and `Double`. Also `RealFrac` extends upon `Real` and `Fractional`.
+
+Operators under `Floating`: `pi`, `exp`, `log`, `sqrt`, `**`, `sin,cos,tan,etc`. Instances/members of floating are `Float` and `Double`.
 
 Defaulting: "I need a type (a) with (Num a => a) and (Fractional a => a). (Fractional a) requires (Num a) already, so that part is redundant and I can proceed with just the (Fractional a)". it picks a reasonable instance of Fractional via defaulting, which gives it Double.
 
