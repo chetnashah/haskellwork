@@ -3,6 +3,9 @@
 
 ghci is repl for haskell
 
+To know all flags in ghci:
+`:show language`
+
 * use `:t` variable to get type
 * use `:k` variable to get kind
 * use `:i` binding to get info on binding
@@ -11,6 +14,9 @@ ghci is repl for haskell
 use the command `:m`, which is short for :module. This will unload the
 file from GHCi, so the code in that file will no longer be in scope in
 your REPL
+* use `:set -Wall` to get compile time warnings in ghci
+
+**Note** - In GHCi, ":t" only accepts terms/values, and ":k" only accepts types/type-exprs
 
 faster docs is accessed by SPC m h H
 
@@ -32,6 +38,9 @@ We need to use `let` in order to declare variables in REPL, but it is not requir
 Needs to have a `Main.hs` module with a main declaration, which will be entry point for the project/app
 
 `Note`: you can load modules in `gchi` optionally without having a main block.
+
+Building a stack project with warnings etc.
+`stack build --ghc-options="-Wall"`
 
 ### Effects in haskell/fp
 
@@ -101,6 +110,12 @@ e.g.
 
 * Order of evaluation is present in `do`.
 
+### Checking if given term/type is part of typeclass
+
+```hs
+:t (id :: Num a => a -> a) "test" -- string is not num, will error out.
+```
+
 ### Evaluation orders in lambda calculus
 
 1. Normal order: Evaluate leftmost, outermost lambdas first, there is a possibility to apply functions before evaluating arguments. similar to call by name but call by name does not evaluate inside the body of an unapplied function.
@@ -140,6 +155,8 @@ There are three main ways:
 2. Type synonym declarations using `type` keyword
 3. Datatype renamings using `newtype` keyword
 4. Generalized Algebraic data types `GADTs` with `data + where` keywords
+
+
 
 #### Algebraic data types uisng `data`
 

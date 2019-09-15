@@ -1,3 +1,4 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
 module Print1 where
 
 k = (/) 6 2
@@ -11,6 +12,9 @@ jackal x y = x
 kessel :: (Ord a, Num b) => a -> b -> a
 kessel x y = x
 
+pp = (+)
+
+functionS (x, y) = y
 -- :t kessel 1 2
 -- (Ord a, Num a) => a
 
@@ -19,6 +23,9 @@ kessel x y = x
 
 -- :t kessel (1 :: Integer) 2 
 -- Integer
+
+ll :: void
+ll = undefined
 
 main :: IO ()
 main = putStrLn "hello world!"
