@@ -148,6 +148,18 @@ isEq :: (Eq a, Eq b, a ~ b) => a -> b -> Bool
 isEq x y = x == y
 ```
 
+### Functions dont derive Show
+
+The Haskell compiler doesn't maintain the expressions as they are, but translates them to machine code or some other low-level representation. You would usually see error with an arrow, it means you were trying to `Show` a function e.g.`No instance for (Show ([Char] -> [Char]))`, which also means you passed fewer arguments to a function.
+
+Theoritically,
+Functional programming is about functions. A mathematical (precisely, set-theoretic) function is entirely defined by its graph, that is by pairs of objects (argument, value).
+
+only sensible way to show functions is to show their graph. can be done by http://hackage.haskell.org/package/universe-reverse-instances.
+
+
+
+
 ### User defined data types
 
 There are three main ways:

@@ -68,3 +68,35 @@ Typeclass instances we can magically derive
 are `Eq`, `Ord`, `Enum`, `Bounded`, `Read`, and `Show`
 
 Unlike other languages, Haskell does not provide universal stringification (Show / print) or equality (Eq (value equality) or pointer equality) as this is not always sound or safe
+
+### Typeclass defaulting and co-ercion
+
+Below are the given default values 
+for given typeclass:
+```hs
+default Num Integer
+default Real Integer
+default Enum Integer
+default Integral Integer
+default Fractional Double
+default RealFrac Double
+default Floating Double
+default RealFloat Double
+```
+
+### Ord typeclass
+
+Ord extends upon `Eq`, since it is necessary
+to have equality comparision in order to order elements.
+
+Interface method: `compare`
+`compare` returns one of `EQ`, `LT`, `GT`.
+
+Other operators include comparision operators:
+`>`, `<` which returns a `Bool`.
+
+`max` and `min` operators return value of same polymorphic `a`.
+
+Compound types like `[]`, `(,)`, `Either` etc can be Ord by peicewise Ord elements compared respectively.
+
+
