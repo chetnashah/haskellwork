@@ -99,4 +99,247 @@ Other operators include comparision operators:
 
 Compound types like `[]`, `(,)`, `Either` etc can be Ord by peicewise Ord elements compared respectively.
 
+### Explicit type annotation in Ghci
 
+```hs
+> let x::Int; x = read "1"
+> x
+1
+```
+
+### Data type definition
+
+To the left side of the datatype definition, we are allowed the type constructor,
+and type variables.
+
+To the right side of the equals sign of datatype definition, we are allowed
+data constructors along with `typevariables/concreteType/ExistingDataType`.
+
+### 
+
+Type checker will try to give variables the most generic/general/maximally polymorphic type based on the inferred knowledge.
+
+
+We can declare more specific (monomorphic) functions from
+more general (polymorphic) functions:
+```hs
+-- polymorphic id function
+myid :: a -> a
+myid x = x
+-- co-erced to a specific type
+(myid :: Integer -> Integer) 33 -- 33
+```
+
+Not the other way round:
+we lost the generality
+of `Num` when we specialized to `Integer`
+
+```hs
+let numId = id :: Num a => a -> a
+let intId = numId :: Integer -> Integer
+-- below line throws error
+let altNumId = intId :: Num a => a -> a
+-- throws long type error
+```
+
+Note: **Concrete types imply all the typeclass they provide**
+
+e.g. 
+```hs
+-- since Int has Ord and Num instance, everything works
+addWeird :: Int -> Int -> Int
+addWeird x y =
+if x > 1
+then x + y
+else x
+```
+
+### Pattern matching
+
+Patterns are matched against values or data constructors, not types.
+
+Pattern matching proceeds from left to right and outside to inside.
+
+Data constructors come in handy on the left side of equal sign,
+acting to destructure function arguments which are values made using 
+data constructors.
+
+Basically any destructuring to left of equal e.g. `(,)` does tuple destructuring
+`[]` does array destructuring . any user defined data constructor to left of equal sign 
+destructure passed in argument
+
+### Case expressions
+
+Case expressions go well with pattern matching:
+The value of case expression is the value of the expression corresponding to 
+the pattern that was successfully matched.
+```
+case expr of
+    pt1 -> expr1
+    pt2 -> expr2
+```
+**Note** - No pipes in case expressions like they are present in guards
+Case expression along with let :
+```hs
+    isPalindrome xs =
+        let same = xs == reverse xs in
+        case same of
+            True -> "Yes"
+            False -> "No"
+```
+
+One can use `where` clause with case expressions
+```hs
+    isPalindrome xs =
+        case same of
+            True -> "Yes"
+            False -> "No"
+            where same = xs == reverse xs
+```
+
+
+### Guards
+
+A set of statements with a boolean expression and corresponding result expression separated by `=`, useful in function definition.
+`otherwise` is an alias for `True`
+e.g.
+```hs
+isRight :: (Num a, Eq a) => a -> a -> a -> String
+isRight a b c
+    | a^2 + b^2 == c^2 = "Right ON"
+    | otherwise        = "Not right"
+```
+**Note** - Equals sign appears in the statement sets, not before pipes
+
+```hs
+avgGrade :: (Fractional a, Ord a) => a -> Char
+avgGrade x
+    | y >= 0.9 = 'A'
+    | y >= 0.8 = 'B'
+    | y >= 0.7 = 'C'
+    | y >= 0.59 = 'D'
+    | y < 0.59 = 'F'
+    where y = x / 100
+```
+
+Guards are not very good at exhaustive pattern matching compared `case` expressions,
+so you must add `otherwise` at the last guard to fix warning `-Wincomplete-patterns`.
+
+Multi argument guard expr:
+```hs
+    fB3 :: a -> a -> Bool -> a
+    fB3 x y z
+        | z == True = x
+        | z == False = y
+```
+
+
+### Higher order functions
+
+To better understand how HOFs work syntactically, it’s worth
+remembering how parentheses associate in type signatures.
+
+```hs
+flip :: (a -> b -> c) -> b -> a -> c
+flip f x y = f y x
+```
+
+When there are no higher order functions, by default the brackets
+associate to the right in type signatures, since all multi argument
+signatures are curried implicitly
+
+
+### Function composition
+
+Remember in mathematics we use to have `g.f x`, which is also read as `g after f` on x.
+
+```hs
+(.) :: (b -> c) -> (a -> b) -> a -> c
+```
+
+All functions participating in composition should be single argument and single return
+
+Usage of `$` along with composition
+```hs
+negate . sum $ [1,2,3,4,5]
+(negate . sum ) [1,2,3,4,5]
+negate (sum [1,2,3,4,5])
+-- what happens without $
+-- negate . (sum [1,2,3,4,5])
+-- negate . 15
+-- error since 15 is not a function
+```
+
+Interesting example:
+```hs
+ take 5 . filter odd . enumFrom $ 3
+```
+
+`print = (putStr . show)`
+`print :: Show a => a -> IO ()`
+`show :: Show a => a -> String`
+`putStr :: String -> IO ()`
+The point of print is to compose putStrLn and show so that we don’t
+have to call show on its argument ourselves
+
+### Recursion and Y Combinator
+
+
+### Bottom
+
+`_|_` or `bottom` is a term used in haskell to refer to computations that do
+not successfully result in a value.
+
+Throw exceptions using `error strMsg`
+e.g.
+```hs
+f :: Bool -> Int
+f True = error "blah"
+f False = 0
+```
+
+### Lists
+
+Definition:
+```hs
+data [] a = [] | a : [a]
+```
+
+Haskell has some syntactic sugar to accommodate the use of lists
+```hs
+(1 : 2 : 3 : []) ++ (4 : [])
+-- is same as
+[1, 2, 3] ++ [4]
+```
+
+Range syntaxes:
+```hs
+[1..10] -- [1,2,3,4,5,6,7,8,9]
+enumFrom 1 -- [1,2,3............Infinity]
+enumFromTo 1 10 -- [1,2,3,4,5,6,7,8,9]
+enumFromThenTo 1 3 10 -- [1,3,5,7,9]
+```
+
+Extracting portions of list
+```hs
+take :: Int -> [a] -> [a]
+drop :: Int -> [a] -> [a]
+splitAt :: Int -> [a] -> ([a], [a])
+```
+
+Taking/dropping/splitting out of empty list returns an empty list
+
+Instead of specifying exact numbers to take drop, a useful version is
+Predicate based taking/dropping
+```hs
+takeWhile :: (a -> Bool) -> [a] -> [a]
+dropWhile :: (a -> Bool) -> [a] -> [a]
+```
+while iteration stops as soon as any iteratio returns false.
+e.g.
+```hs
+takeWhile (=='a') "abracadabra"
+-- a
+takeWhile (>6) [1..10]
+-- []
+```

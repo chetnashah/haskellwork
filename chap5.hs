@@ -22,6 +22,35 @@ module Chap5 where
     instance Eq a => Eq (Identity a) where
         (==) (Identity v) (Identity v') = v == v'
 
+    data Mood = Blah | Woot deriving (Eq, Show)
+
+    settleDown x = if x == Woot then Blah else x
+
+    type Subject = String
+    type Verb = String
+    type Object = String
+
+    data Sentence = Sentence Subject Verb Object deriving (Eq, Show)
+
+    s1 = Sentence "dogs" "drool"
+    s2 = Sentence "julie" "loves" "dogs"
+
+    data Rocks = Rocks String deriving (Eq, Show)
+    data Yeah = Yeah Bool deriving (Eq, Show)
+
+    data Papu = Papu Rocks Yeah deriving (Eq, Show)
+
+    equalityForall :: Papu -> Papu -> Bool
+    equalityForall p p' = p == p'
+
+    f :: Float
+    f = 1.0
+
+    freud :: a -> a
+    freud x = x
+
+    test :: String 
+    test = "Qrew" :: String
 
     main = do
         print "Hello"

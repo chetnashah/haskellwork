@@ -517,6 +517,26 @@ Converting traversable monads to monadic traversable.
 -- e.g. [IO Char] -> IO [Char]
 ```
 
+9 `read`
+Read interprets an object/data from a string.
+```hs
+-- read :: Read a => String -> a
+```
+it's always a good idea to instead use the readMaybe function from `Text.Read`
+
+10 `show`
+Show converts an object/data to string
+```hs
+-- show :: Show a => a -> String
+```
+
+11 `error`
+throw error with given string message.
+```hs
+-- error :: [Char] -> a
+error "hello"
+```
+
 ### Numerics
 
 When we query the types of numeric values, we see typeclass
