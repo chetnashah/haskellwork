@@ -197,6 +197,35 @@ One can use `where` clause with case expressions
             where same = xs == reverse xs
 ```
 
+One cannot match against variable values
+
+e.g.
+**will not work**
+```hs
+let kk = 1
+let abc = 3
+case abc of
+    kk -> "is one"
+    _ -> "not one"
+```
+
+Case expressions can have guards but in an interesting way:
+whcih means case expr patters allow boolean guards!! which is quite handy
+(https://www.haskell.org/onlinereport/haskell2010/haskellch3.html)
+e.g.
+```hs
+    -- sep means separator
+    getAllWords :: Char -> String -> [String]
+    getAllWords sep sentence =
+        let fft = takeWhile (/=sep) sentence
+            lst = dropWhile (/=sep) sentence
+            in
+                case sentence of
+                    "" -> []
+                    (hd : rest)
+                        | hd == sep -> getAllWords sep rest
+                        | otherwise -> fft : getAllWords sep lst
+```
 
 ### Guards
 
@@ -232,6 +261,15 @@ Multi argument guard expr:
         | z == True = x
         | z == False = y
 ```
+
+#### pattern guards
+
+pattern guards are of the form `p <- e`, where `p` is a pattern (see Section 3.17) of type `t` and `e` is an expression type `t1`.
+We usually see them in list comprehensions
+
+#### Boolean guards
+
+boolean guards are arbitrary expressions of type `Bool`.
 
 
 ### Higher order functions

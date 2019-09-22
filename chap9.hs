@@ -12,4 +12,14 @@ module Chap9 where
         EQ -> []
         LT -> st : eftc2 (succ st) end
 
-        
+    getAllWords :: Char -> String -> [String]
+    getAllWords sep sentence =
+        let fft = takeWhile (/=sep) sentence
+            lst = dropWhile (/=sep) sentence
+            in
+                case sentence of
+                    "" -> []
+                    (hd : rest)
+                        | hd == sep -> getAllWords sep rest
+                        | otherwise -> fft : getAllWords sep lst
+
