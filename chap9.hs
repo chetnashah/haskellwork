@@ -12,6 +12,8 @@ module Chap9 where
         EQ -> []
         LT -> st : eftc2 (succ st) end
 
+    uk = putStrLn $ show $ 3 + undefined
+
     getAllWords :: Char -> String -> [String]
     getAllWords sep sentence =
         let fft = takeWhile (/=sep) sentence

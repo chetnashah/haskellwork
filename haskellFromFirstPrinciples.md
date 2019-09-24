@@ -229,7 +229,10 @@ e.g.
 
 ### Guards
 
-A set of statements with a boolean expression and corresponding result expression separated by `=`, useful in function definition.
+Guards are basically constraints for patterns.
+Allowed along side function definitions with `=`.
+and allowed along side case patterns with `->`.
+
 `otherwise` is an alias for `True`
 e.g.
 ```hs
@@ -261,6 +264,22 @@ Multi argument guard expr:
         | z == True = x
         | z == False = y
 ```
+
+`Case with guards`:
+
+Here we see pattern matches but guard does not, so
+interpreter moves on to next pattern which is `_`.
+```hs
+kk = 2
+case kk of
+  1 -> "I am one"
+  2   
+    | False -> "Two but false"
+  _ -> "I am rest of case"
+-- prints "I am rest of case"
+```
+
+
 
 #### pattern guards
 
@@ -381,3 +400,53 @@ takeWhile (=='a') "abracadabra"
 takeWhile (>6) [1..10]
 -- []
 ```
+
+### List comprehensions
+
+Simple list comprehension
+
+```hs
+[x^2 | x <- [1..10]]
+-- [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+```
+
+List comprehension with filter/predicates
+
+```hs
+[x^2 | x <- [1..10], rem x 2 == 0] -- filter out even ones from generated nums, then feed to function
+-- [4, 16, 36, 64, 100]
+```
+
+Multiple generators, think of loop nesting in same manner as order found in the list comprehension:
+```hs
+[x^y | x <- [1..5], y <- [2, 3]]
+-- [1, 1, 4, 8, 9, 27, 16, 64, 25, 125] 
+```
+
+Multiple generators with a filter
+```hs
+[x^y | x <- [1..10], y <- [2, 3], x^y < 200]
+-- [1,1,4,8,9,27,16,64,25,125,36,49,64,81,100]
+```
+
+List comprhension with strings:
+```hs
+[x | x <- "Three Letter Acronym", elem x ['A'..'Z']]
+-- "TLA"
+```
+
+#### List evaluation
+
+The cons `:` can be evaluated lazily without evaluating elements.
+e.g. `length [1, undefined, 3]` will not crash
+Seeing properly
+```hs
+length [] = 0
+length (_:xs) = 1 + length xs -- ignoring heads, so undefined is fine, only care about pattern matching cons
+```
+
+#### Transforming list values
+
+`map` is only for arrays
+`fmap` is for all kinds of functors , array is a functor.
+
