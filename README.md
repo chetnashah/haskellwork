@@ -57,7 +57,15 @@ All functions are prefix functions by default and calling syntax is
 To use an infix function, you put it at first position with paranthenses
 e.g. `(+) 2 6` is same as `2 + 6`
 
-## Sectioning
+### Parentheses
+
+Only for grouping, does not imply strict execution.
+e.g. f (1 + 2), but f returns a constant value,
+then (1 + 2) is never evaluated
+Similarly f [1..] would return easily, if f is
+eager and makes decision which does not need all elements
+
+### Sectioning
 
 Sectioning is a concise way to partially apply arguments to infix operators.
 
@@ -536,6 +544,18 @@ throw error with given string message.
 -- error :: [Char] -> a
 error "hello"
 ```
+
+12. `chr`
+converts Int to Char
+e.g.
+```hs
+chr :: Int -> Char
+chr 65
+-- 'A'
+```
+
+13. `ord`
+
 
 ### Numerics
 
