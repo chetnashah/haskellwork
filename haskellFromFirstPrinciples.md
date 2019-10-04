@@ -69,6 +69,9 @@ are `Eq`, `Ord`, `Enum`, `Bounded`, `Read`, and `Show`
 
 Unlike other languages, Haskell does not provide universal stringification (Show / print) or equality (Eq (value equality) or pointer equality) as this is not always sound or safe
 
+typeclass definition only allows single type parameter/variable by default.
+e.g. `class monad m where ...` and m is the type parameter.
+
 ### Typeclass defaulting and co-ercion
 
 Below are the given default values 
@@ -508,6 +511,11 @@ will be forced. One of the consequences of this is that foldr can avoid
 evaluating not just some or all of the values in the list, but some or
 all of the list’s spine as well
 
+If your folding function isn’t commutative, a left
+fold can lead to a different result than a right fold of the same. e.g. `(^)`
+
+If some function works with foldr, it can also work over foldl by passing in flip of the function.
+
 Folding over infinite lists:
 It is possible to fold over infinite lists, where combiner are lazy and/or
 do not care about rest of the sequence, e.g. `||` or `&&`
@@ -536,3 +544,164 @@ foldr:: (b -> a -> a) -> a -> [b] -> a
 `foldr (\_ _ -> 9001) 0 [undefined]` or `foldr (\_ _ -> 9001) undefined [undefined]` returns 9001 due to lazy evaluation.
 since folding function does not care about its arguments
 but `foldr (\_ _ -> 9001) 0 undefined` will throw error.
+
+Finding largest item in list using fold:
+`foldr max 'a' "fear is the litztle death"` returns `z`
+
+` foldl (flip (:)) [] (reverse [1..5])` is same as `foldr (:) [] [1,2,3,4,5]`
+
+
+### Algebraic data types
+
+`arity` - Constructors are said to be `nullary`, `unary` etc..
+
+A type can be thought of enumeration of constructors that have zero or more arguments (being type variables/Concrete types/Other data types)
+
+Data constructors that take more than one argument are called products.
+
+#### The "Algebraicness"
+
+The cardinality of a datatype is the number of possible values
+it defines. That number can be as small as 0 or as large as infinite
+(for example, numeric datatypes, lists). Knowing how many possible
+values inhabit a type can help you reason about your programs.
+
+Cardinality of Bool is 2
+Cardinality of Int8 is 256
+
+Data types with only nullary constructors only: Cardinality is same as number of constructors.
+
+Datatypes that only contain a unary constructor always have the
+same cardinality as the type they contain
+e.g.
+```hs
+data Goats = Goats Int deriving (Eq, Show)
+```
+
+#### newtype
+
+Exclusively for unary constructors.
+A newtype cannot be a product type, sum type, or contain nullary
+constructors, but it has a few advantages over a vanilla data declaration.
+
+Implementation and perf:
+t it has no runtime overhead, as it reuses the
+representation of the type it contains. It can do this because it’s not
+allowed to be a record (product type) or tagged union (sum type). The difference between newtype and the type it contains is gone by
+the time the compiler generates the code.
+
+
+#### newtype vs type alias
+
+You can define typeclass instances for newtypes that differ from instances for their underlying type.(e.g. wrapped type is Bool, I can more typeclasses than Bool satisfies)
+
+You cannot do that for type synonyms.
+
+Use `{-# LANGUAGE GeneralizedNewtypeDeriving #-}` for reusing typeclass behavior or the wrapped type.
+
+
+### how to write instance with typeclass constratins
+
+`instance (assertion1, ..., assertionn) => className type1 ... typem where ...`
+```hs
+    class TooMany a where
+        tooMany :: a -> Bool
+
+    instance (Num a, TooMany a) => TooMany (a, a) where
+        tooMany (b,c) = True
+``` 
+
+All details in https://www.microsoft.com/en-us/research/wp-content/uploads/1997/01/multi.pdf
+and https://downloads.haskell.org/~ghc/7.0.1/docs/html/users_guide/type-class-extensions.html
+
+### Sum types
+
+Cardinality of sum types is the addition of cardinalities of their data constructors
+
+```hs
+data BigSmall =
+    Big Bool
+    | Small Bool
+    deriving (Eq, Show)
+```
+Cardinality of this is 2 + 2 i.e. 4.
+
+### Product types
+
+Any data constructor with two or more type arguments is a product.
+
+A product type's cardinality is the multiplication of cardinalities of its inhabitants.
+
+e.g. `(Bool, Bool)` cardinality is 2 x 2 i.e. 4
+
+A product is like a struct, i.e. it has abilities to carry multiple values in a single data constructor.
+
+#### Record syntax
+
+Record are convinient sugar for product types.
+
+e.g.
+```hs
+data Person = MkPerson String Int deriving (Eq, Show)
+jm = MkPerson "julie" 108
+ca = MkPerson "chris" 16
+
+-- extract/access name of a given person
+namae :: Person -> String
+namae (MkPerson s _) = s
+```
+
+Data is immutable in Haskell, so values carry with them the information about how they were
+created.
+
+```hs
+-- There are two ways to declare stuff
+-- 1.
+data Person = Person String Int deriving (Eq, Show)
+
+-- 2.
+data HumanName = String
+data HumanAge = Int
+data Human = Human HumanName HumanAge deriving (Eq, Show)
+```
+
+```hs
+data Product a b = Product a b deriving (Eq, Show)
+
+-- both below are same
+data FarmHouse = Farmhouse String Int deriving (Eq, Show)
+type FarmHouse' = Product String Int
+
+-- both below are same
+data FF2 = FF2 String Int Bool
+type FF2' = Product String (Product Int Bool)
+```
+
+Some other utility Types like `Product`:
+```hs
+data Id a =
+    MkId a deriving (Eq, Show)
+
+data Sum a b =
+    First a
+    | Second b
+    deriving (Eq, Show)
+
+data RecordProduct a b =
+    RecordProduct { pFirst :: a, pSecond :: b } deriving (Eq, Show)
+```
+
+
+#### Infix type and data constructors
+
+```hs
+data Product a b =
+a :&: b
+deriving (Eq, Show)
+-- 1 :&: 2
+-- :t (1 :&: 2) :: (Num a, Num b) => Product a b
+```
+
+
+### As Patterns
+
