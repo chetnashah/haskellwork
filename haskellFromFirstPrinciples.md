@@ -705,3 +705,124 @@ deriving (Eq, Show)
 
 ### As Patterns
 
+Althought the name is "As" patterns the symbol used is `@`,
+to retain the full pattern in case of pattern matching
+
+```hs
+f :: Show a => (a, b) -> IO (a, b)
+f t@(a, _) = do
+    print a
+    return t
+
+-- f (1, 2)
+-- 1
+-- (1, 2)
+```
+
+
+### smart constructors
+
+Allow value construction only after validation.
+e.g. if person name is empty, return nothing on construction.
+```hs
+data Person = Person Name Age deriving Show
+mkPerson :: Name -> Age -> Maybe Person
+mkPerson name age
+| name /= "" && age >= 0 = Just $ Person name age
+| otherwise = Nothing
+```
+
+#### Either data type
+
+```hs
+data Either a b = Left a | Right b
+```
+Useful in smart constructors e.g..
+```hs
+mkPerson :: Name -> Age -> Either PersonInvalid Person
+```
+Think of it as a better alternative to `MayBe` because `Maybe` will always give you `Nothing` in case
+of a problem. Where as `Either` can return a custom string/structure telling you what went wrong.
+
+As per convention,
+Left is used for error constructors,
+and Right for valid value constructors.
+Convenetion- Left of Either is used for whatever case is going work to stop.
+
+Even more generic and useful type:
+```hs
+-- short alias than using Either
+type ValidateEntity a = Either [EntityInvalid] a
+-- EntityInvalid is array of reasons/strings why it was invalid 
+
+ageOkay :: Age -> Either [PersonInvalid] Age
+ageOkay :: Age -> ValidateEntity Age
+ageOkay age = case age >= 0 of
+    True -> Right age
+    False -> Left [AgeTooLow]
+
+nameOkay :: Name -> Either [PersonInvalid] Name
+nameOkay :: Name -> ValidateEntity Name
+nameOkay name = case name /= "" of
+    True -> Right name
+    False -> Left [NameEmpty]
+
+mkPerson :: Name -> Age -> Either [PersonInvalid] Person
+mkPerson :: Name -> Age -> ValidateEntity Person
+mkPerson name Age = mkPerson' (nameOkay name) (ageOkay age)
+
+data PersonInvalid = NameEmpty | AgeTooLow deriving (Eq, Show)
+mkPerson' :: Either [PersonInvalid] Name -> Either [PersonInvalid] Age -> Either [PersonInvalid] Person
+-- or equivalent below
+mkPerson' :: ValidateEntity Name -> ValidateEntity Age -> ValidateEntity Person
+mkPerson' (Right nameOk) (Right ageOk) = Right (Person nameOk ageOk)
+mkPerson' (Left badName) (Left badAge) = Left (badName ++ badAge)
+mkPerson' (Left badName) _ = Left badName
+mkPerson' _ (Left badAge) = Left badAge
+```
+
+Either is usually composable in form of sub-entities e.g. if one of the sub-entities goes left,
+the entity itself also goes left. So higher order functions like `lift` etc. become useful here.
+
+
+### Lifted and UnLifted types
+
+- types with kind `*` are lifted
+- types with kind `#` are unlifted.
+
+Lifted type: A type that can be inhabited by `bottom`. These types are represented by pointer and include most of datatypes used and encountered.
+
+Unlifted type: cannot be inhabitated by bottom. e.g. native machine types and raw pointers.
+
+**Note** - Newtypes are a special case. The kind is `*`, but they are unlifted, because their representation is identical to type they contain, so newtype itself is not creating any new pointer beyond that of the type it contains, and it cannot be inhabitated by bottom.
+
+
+### Higher kinded types
+
+A type is said to be inhabited if there exist values of that type.
+`*` is the only type that is inhabitatable.
+so, The kind of a type variable is always `*`.
+
+
+Type constructor with type variables, will have kind like `* -> *` etc. 
+e.g. kind of Maybe is `* -> *`
+```
+:k Maybe Maybe
+First argument should have kind '*',
+but Maybe has kind '* -> *'
+
+:k Maybe (Maybe Int)
+Maybe (Maybe Int) :: *
+```
+
+
+The crux is Maybe's type variable cannot be anything other than concrete type, for e.g. a parametrized type constructor won't work.
+
+```hs
+data Example a = Blah | RoofGoats | Woot a
+-- :k Maybe Example
+-- crashes because first argument of Maybe should have kind * 
+
+-- similarly :k Maybe [] throws type error
+```
+

@@ -165,7 +165,65 @@ module Chap11 where
 
     -- TODO
     -- use any traversal to fold
-    foldTree :: (a -> b -> b) -> b -> BinaryTree a -> b
+    -- foldTree :: (a -> b -> b) -> b -> BinaryTree a -> b
+
+    isSubsequenceOf :: (Eq a) => [a] -> [a] -> Bool
+    isSubsequenceOf [] [] = True
+    isSubsequenceOf (x:_) [] = False
+    isSubsequenceOf [] (y:_) = True
+    isSubsequenceOf (x:xs) ys = (x `elem` ys) && isSubsequenceOf xs ys
+
+    type Digit = Char
+    type Presses = Int
+
+    type PhoneValues = String
+
+    data DaPhone = DaPhone [(Digit, PhoneValues)] deriving (Eq, Show)
+
+    daPhone = DaPhone
+        [('1', "1"),
+        ('2',"abc"),
+        ('3', "def"),
+        ('4',"ghi"),
+        ('5', "jkl"),
+        ('6', "mno"),
+        ('7', "pqrs"),
+        ('8', "tuv"),
+        ('9', "wxyz"),
+        ('*', "*^"),
+        ('0', "+_"),
+        ('#', "#.,")
+        ]
+
+    convo :: [String]
+    convo = ["Wanna play 20 questions",
+        "Ya",
+        "U 1st haha",
+        "Lol ok. Have u ever tasted alcohol lol",
+        "Lol ya",
+        "Wow ur cool haha. Ur turn",
+        "Ok. Do u think I am pretty Lol",
+        "Lol ya",
+        "Haha thanks just making sure rofl ur turn"]
+
+    -- reverseTaps :: DaPhone -> Char -> [(Digit, Presses)]
+
+
+    -- findPair :: DaPhone -> Char -> 
+
+
+    -- Hutton's Razor
+    data Expression =
+        LitExp Integer
+        | AddExp Expression Expression
+    
+    eval :: Expression -> Integer
+    eval (LitExp i) = i
+    eval (AddExp e1 e2) = (+) (eval e1) (eval e2)
+
+    printExpr :: Expression -> String
+    printExpr (LitExp i) = show i
+    printExpr (AddExp e1 e2) = printExpr e1 ++ " + " ++ printExpr e2
 
     main = do
         putStrLn "Hello world!"
