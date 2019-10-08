@@ -16,6 +16,12 @@ file from GHCi, so the code in that file will no longer be in scope in
 your REPL
 * use `:set -Wall` to get compile time warnings in ghci
 
+### Enabling extensions in GHCi
+
+The extension name after `-X` e.g. `:set -XRankNTypes`
+
+### 
+
 **Note** - In GHCi, ":t" only accepts terms/values, and ":k" only accepts types/type-exprs
 
 faster docs is accessed by SPC m h H
@@ -556,6 +562,27 @@ chr 65
 
 13. `ord`
 
+13. `iterate`
+given a starting value and a function to be applied repeatedly, return the infitie list of the same.
+```hs
+iterate :: (a -> a) -> a -> [a]
+take 10 $ iterate (+1) 0
+-- [0,1,2,3,4,5,6,7,8,9]
+```
+
+14. `unfoldr`: Part of `Data.List` package.
+`unfoldr`: the dual to `foldr`, `unfoldr` builds a list from a seed value.
+The first argument is a function that takes the element and returns `Nothing` if it is done or returns `Just (a,b)` in which case, a is prepended to the list and b is used as the next element in recursive call.
+The second argument is the seed value to start the generation with
+
+```hs
+-- Nothing can be returned by generating fn to halt generating
+unfoldr :: (b -> Maybe (a, b) -> b -> [a])
+
+iterate f == unfoldr (\x -> Just (x, f x)) == [x, f x, f f x, f f f x, .... ]
+unfoldr (\b -> if b == 0 then Nothing else Just (b, b-1)) 10
+-- [10,9,8,7,6,5,4,3,2,1]
+```
 
 ### Numerics
 

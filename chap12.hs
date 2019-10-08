@@ -117,5 +117,31 @@ module Chap12 where
     eitherMaybe'' :: (b -> c) -> Either a b -> Maybe c
     eitherMaybe'' f e = either' (const Nothing) (Just . f) e
 
+    myIterate :: (a -> a) -> a -> [a]
+    myIterate f s = s : myIterate f (f s)
+
+    myUnfoldr :: (b -> Maybe (a, b)) -> b -> [a]
+    myUnfoldr f s = case f s of
+        Nothing -> []
+        (Just (x, y)) -> x : myUnfoldr f y
+
+
+    -- betterIterate using myUnfoldr
+    betterIterate :: (a -> a) -> a -> [a]
+    betterIterate f x = myUnfoldr (\x -> Just (x, f x)) x
+
+
+    data BinaryTree a =
+        Leaf
+        | Node (BinaryTree a) a (BinaryTree a)
+
+    unfoldTree :: (a -> Maybe (a, b, a)) -> a -> BinaryTree b
+    unfoldTree = undefined
+
+    treeBuild :: Integer -> BinaryTree Integer
+    treeBuild = undefined
+
+    
+
     main = do
         putStrLn "hello world"
