@@ -701,6 +701,22 @@ Let and Where are fundamentally different.
 `Where is a declaration` that bounds to a surrounding construct.
 
 
+#### Where clause
+
+`Where` is a useful clause that bounds to surrounding construct
+and can have multiple declarations within itself (they can also use each other)
+e.g.
+```hs
+fn a b c = x + y + z
+  where
+    x = a + b + c
+    y = if (2 ^ 2) == 4
+          then 10
+          else 99
+    z = a * b * c * m
+    m = 1
+```
+
 ### when to use a `do` block?
 
 When doing a bunch of computation, and then returning a value via `return`. We need to combine all of it into a single expression via `do` block.

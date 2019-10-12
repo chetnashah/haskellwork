@@ -46,7 +46,47 @@ one gets error like:
                           or `DogsRule.dogs',
 ```
 
+All of your imports must occur after the module has
+been declared and before any expressions have been defined in your
+module.
+e.g.
+```hs
+-- bad code
+module Addition where
+sayHello :: IO ()
+sayHello = putStrLn "hello!"
+import Test.Hspec -- invalid!!!!, move this before sayHello
+```
+
 Note: Ordering of import declarations is irrelevant.
+
+#### Selective imports
+
+```hs
+-- only import into scope the names mask and try
+import Control.Exception (mask, try)
+import Control.Monad (forever, when)
+```
+
+#### Qualified vs unqualified imports
+
+Here is an example of qualified imports:
+```hs
+import qualified Data.Bool
+
+-- usage needs full namespace
+Data.Bool.not True == False
+```
+
+Qualified import with alias, useful since namespaces get quite big
+```hs
+import qualified Data.Bool as B
+B.not True == False
+```
+
+### Browsing modules in GHCi
+
+Use `:browse ModuleName` in ghci, to see the declarations in the module.
 
 
 
