@@ -15,7 +15,7 @@ sample' :: Gen a -> IO [a]
 arbitrary :: Arbitrary a => Gen a
 ```
 
-```
+```hs
 sample (arbitrary :: Gen Int)
 {-
 0
