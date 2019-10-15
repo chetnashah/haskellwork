@@ -118,6 +118,8 @@ library
   default-language:    Haskell2010
 ```
 
+cabal file `name` field specifies the name of the package being made for the library section.
+
 ### Stack
 
 `stack new`: will create a new directory containing all the needed files to start a project correctly

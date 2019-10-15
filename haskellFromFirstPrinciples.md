@@ -826,3 +826,201 @@ data Example a = Blah | RoofGoats | Woot a
 -- similarly :k Maybe [] throws type error
 ```
 
+### Algebras
+
+Typically implemented with typeclasses, that define set of operations.
+
+Algebras are defined by their laws and useful principally for their laws. laws make up what algebras are.
+
+#### semigroup
+
+A semigroup is a binary associative operation.
+```hs
+  (<>) :: a -> a -> a
+  GHC.Base.sconcat :: GHC.Base.NonEmpty a -> a
+  GHC.Base.stimes :: Integral b => b -> a -> a
+```
+`<>` is the binary operation here, you can also refer to as `sappend`
+
+#### Monoid
+
+A monoid is binary associative operation with identity.
+Also can be said as semigroup properties + identity element.
+
+```hs
+  mempty :: a
+  mappend :: a -> a -> a
+  mconcat :: [a] -> a
+  mconcat = foldr mappend mepty
+```
+
+Monoid Laws:
+```hs
+-- Identity laws
+mappend mempty x = x
+mappend x mempty = x
+-- associativity
+mappend x (mappend y z) = mappend (mappend x y) z
+mconcat = foldr mappend mempty
+```
+Identity: some
+value which, when combined with any other value, will always
+return that other value.
+e.g. `++` is operation and `[]` is identity.
+In case of a `monoid`, the value of `identity` is specified via `mempty`.
+so there comes the monoid law:
+```hs
+mappend mempty x = x
+mappend x mempty = x
+```
+
+`[a]` is an instance of `monoid` typeclass.
+```hs
+instance Monoid [a] where
+    mempty = []
+    mappend = (++)
+```
+
+`<>` is same as `mappend` but being infix.
+
+**Note** - Why is `Integer` not `monoid` instance?
+In haskell, Each type should have unique instance for a given typeclass.
+not two (Integer can have: (+, 0) or (*, 1))
+
+#### Sum and Product datatpes in `Data.Monoid`
+
+Since Num/Integer are not directly part of `monoid`,
+monoid lib declares `Sum` and `Product`.
+
+```
+:i Sum
+
+newtype Sum a = Sum { getSum :: a} -- constructor with record
+instance Num a => Monoid (Sum a)
+
+mappend (Sum 2) (Sum 44) -- Sum { getSum = 46}
+mappend (Sum { getSum = 2}) (Sum 44) -- Sum {getSum = 46}
+
+getSum (Sum 22)
+-- 22
+
+(Sum 2) <> (Sum 11) <> (Sum 9)
+-- Sum { getSum = 22}
+```
+
+Monoid use cases: Sometimes this is to describe an API
+for incrementally processing a large dataset, sometimes to describe
+guarantees needed to roll up aggregations (think summation) in a
+parallel, concurrent, or distributed processing framework.
+
+Abelian/commutative monoid: the `mappend` is commutative.
+
+Use with `foldr`: Remember `foldr` expects a combiner and unit value to start with?
+Guess what `mappend` is your combiner, and `mempty` is your unit value to start with.
+
+```hs
+foldr mappend mempty ([2,3,4] :: [Product Int])
+-- Product { getProduct = 24 }
+```
+
+
+When we have more than one potential
+implementation for Monoid for a datatype, it’s most convenient to
+use newtypes to tell them apart.
+
+Mappending:  as a way to condense any set of values to a summary value.
+
+`All` and `Any` are Bool monoids.
+
+`All`: `All` mappend is conjunction (and).
+`Any`: `Any` mappend is disjunction (or).
+
+A newtype Bool wrapper
+```hs
+newtype All = All {getAll :: Bool}
+newtype Any = Any {getAny :: Bool}
+
+All True <> All False
+-- All False
+Any True <> Any False
+-- Any True
+```
+
+`First` and `Last` newtypes for Maybe:
+```hs
+-- prefer first Just in two Maybes given to mappend
+newtype First a = First {getFirst :: Maybe a}
+
+-- prefer last Just in two Maybes given to mappend
+newtype Last a = Last {getLast :: Maybe a}
+
+First (Just 2) <> First (Just 4)
+-- First { getFirst = Just 2}
+
+Last (Just 2) <> Last (Just 4)
+-- Last { getLast = Just 4 }
+
+First Nothing `mappend` First Nothing
+-- First { getFirst = Nothing }
+```
+
+`Maybe` is a valid monoid, if the wrapped type is a `semigroup`.
+It will just operate the wrapped items using the wrapped type's mappend and package everything back into a `Maybe`.
+e.g.
+```hs
+instance Semigroup a => Monoid (Maybe a) -- Defined in `GHC.Bas
+
+mappend (Just (Sum 2)) Nothing
+-- Just (Sum {getSum = 2})
+
+mappend (Just [1,1]) (Just [3,4])
+-- Just [1,1,3,4]
+```
+
+#### Declaring Monoid Instances
+
+In the `Monoid` definition, we need to make a `Semigroup` instance first. which is the result of the monoid definition above.
+
+e.g.
+```hs
+import Data.Monoid()
+import Data.Semigroup()
+
+newtype Listy a = Listy [a] deriving (Eq, Show)  
+instance Semigroup (Listy a) where
+    (<>) = mappend
+instance Monoid (Listy a) where  
+    mempty = Listy []
+    mappend (Listy l) (Listy l') = Listy $ mappend l l'
+```
+
+#### Orphan instances
+
+Orphan instances are still a problem even if duplicate instances
+aren’t both imported into a module because it means your typeclass
+methods will start behaving differently depending on what modules are imported, which breaks the fundamental assumptions and
+niceties of typeclasses.
+
+
+There are a few solutions for addressing orphan instances:
+1. You defined the type but not the typeclass? Put the instance in
+the same module as the type so that the type cannot be imported
+without its instances.
+2. You defined the typeclass but not the type? Put the instance in
+the same module as the typeclass definition so that the typeclass
+cannot be imported without its instances.
+3. Neither the type nor the typeclass are yours? Define your own
+newtype wrapping the original type and now you’ve got a type
+that “belongs” to you for which you can rightly define typeclass
+instances. There are means of making this less annoying which
+we’ll discuss later.
+
+
+These restrictions must be maintained in order for us to reap the
+full benefit of typeclasses along with the nice reasoning properties
+that are associated with them. A type must have a unique (singular)
+implementation of a typeclass in scope, and avoiding orphan instances is how we prevent conflicting instances. Be aware, however,
+that avoidance of orphan instances is more strictly adhered to among
+library authors rather than application developers, although it’s no
+less important in applications
+

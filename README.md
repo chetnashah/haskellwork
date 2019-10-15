@@ -92,6 +92,13 @@ Instead `module header, import declaration or top-level declaration expected`.
 
 In haskell you can put a top-level binding/declaration e.g. `k = 99`, but you cannot put a top-level expression like `putStrLn "wow`.
 
+### Type variable in constraint error
+
+In plain Haskell 2010, constraints can only be applied to type variables, like a or b or whatever, but not to anything more complex.
+
+Legal: `Show a => a -> String`
+
+Illegal: `Show (Maybe a) => a -> String`
 
 
 ### Basics
@@ -838,3 +845,15 @@ main = do
 sequence  :: Monad m => [m a] -> m [a]
 ```
 
+### Map/dictionary data structure
+
+Introduced via `Data.Map.Map`
+The `Map k v` type represents a finite map (sometimes called a dictionary) from keys of type k to values of type v.
+
+```hs
+lm = Data.Map.fromList [('a', '1'), ('b','2')]
+Data.Map.lookup 'z' lm
+-- Nothing
+Data.Map.lookup 'a' lm
+-- Just '1'
+```
