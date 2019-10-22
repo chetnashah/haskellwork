@@ -1233,8 +1233,14 @@ Consider following:
 newtype Mu f = InF { outF :: f (Mu f) } 
 -- Prelude> :k Mu
 -- Mu :: (* -> *) -> *
+
+data LiftItOut f a = LiftItOut (f a)
+
 ```
 
 The above type cannot be a functor instance because it is not
 possible to convert `(* -> *) -> *` to `* -> *`, which is necesary for functor instance.
+
+
+### Applicatives
 
