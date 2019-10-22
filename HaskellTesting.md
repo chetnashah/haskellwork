@@ -148,4 +148,44 @@ arbitrary = frequency [ (1, return Fools), (1, return Twoo) ]
 ```
 
 
+### Quick checking functor instances
 
+
+```hs
+-- the law describe as an equality test
+-- fmap id == id
+-- to work on test cases, it must be moved to a point form
+-- fmap id fct == id fct
+
+fmapIdentityCheck :: (Functor f, Eq (f a)) => f a -> Bool
+fmapIdentityCheck fct = fmap id fct == id fct
+
+-- fmap (g . h) == (fmap g) . (fmap h)
+-- fmap (g . h) fct == (fmap g) . (fmap h) $ fct
+fmapComposeCheck :: (Eq (f c), Functor f) => (a -> b) -> (b -> c) -> f a -> Bool
+fmapComposeCheck g h fct = 
+  fmap (g . h) fct == (fmap g) . (fmap h) $ fct
+
+-- the predicates we made above, we need to pass arguments with types in place where we want variability
+quickCheck $ \x -> functorIdentity (x :: [Int])
+
+let li = fmapComposeCheck (+1) (*2) (x :: [Int])
+quickCheck li
+```
+
+### Making quickcheck generate functions
+
+The underlying Fun type is essentially a product of the
+weird function type and an ordinary Haskell function generated
+from the weirdo
+```hs
+{-# LANGUAGE ViewPatterns #-}
+import Test.QuickCheck
+import Test.QuickCheck.Function
+functorCompose' :: (Eq (f c), Functor f) => f a -> Fun a b -> Fun b c -> Bool
+functorCompose' x (Fun _ f) (Fun _ g) =
+  (fmap (g . f) x) == (fmap g . fmap f $ x)
+
+type IntFC = [Int] -> Fun Int Int -> Fun Int Int -> Bool
+quickCheck (functorCompose' :: IntFC)
+```

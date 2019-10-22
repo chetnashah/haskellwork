@@ -1024,3 +1024,217 @@ that avoidance of orphan instances is more strictly adhered to among
 library authors rather than application developers, although it’s no
 less important in applications
 
+### Functor
+
+
+`<$>` is the infix operator for fmap
+```hs
+($) :: (a -> b)  -> a -> b
+(<$>) :: Functor f => (a -> b) -> f a -> f b
+
+-- left argument is normal fn, right argument is container-type/functor-type
+(+1) <$> Just 1
+-- Just 2
+
+(+1) <$> [11, 12, 13]
+-- [12, 13, 14]
+
+(+1) <$> (1,2)
+-- (1, 3)
+
+```
+
+The goal of fmapping is to leave the
+outer structure untouched while transforming the type arguments
+inside
+
+Multiple use cases for mapping on a structure.
+```hs
+fmap :: (a -> b) -> f a -> f b
+:: (a -> b) -> [ ] a -> [ ] b
+:: (a -> b) -> Maybe a -> Maybe b
+:: (a -> b) -> Either e a -> Either e b
+:: (a -> b) -> (e,) a -> (e,) b
+:: (a -> b) -> Identity a -> Identity b
+:: (a -> b) -> Constant e a -> Constant e b
+:: (a -> b) -> ((->) r a) -> ((->) r b) -- mapping function over other fn which is functor (->) r
+```
+
+`f` in the functor definition is not the
+function that is being mapped, it is the type/functor that is mappable.
+
+All functor instance types e.g. `Maybe`, `[]`, or any other such type will always be of the kind : `* -> *`.
+
+Reason: Each argument (and result) in the type signature for a function
+must be a fully applied. i.e `*`, this reason follows from the kind of function type:
+```hs
+:k (->)
+* -> * -> *
+
+:k (forall a. forall b. a -> b) -- a is * and b is *
+*
+```
+
+See a following example of impossible type signature
+```hs
+class Impish v where
+    impossibleKind :: v -> v a
+-- not possible for v to be both * and * -> * kind
+-- you will get error like `v` is applied too many type arguments
+
+
+class AlsoImp v where
+    nope :: v a -> v
+-- this is also invalid,
+-- Expecting one more argument to v
+-- Expected a type but v has kind 'k0 -> *'
+```
+
+
+#### Functor Laws
+
+Both rules: preserve identity fn and fn composition, make sure that structure is preserved.
+```hs
+-- mapping identity function over to container-structure should behave same..
+fmap id == id
+
+-- fmap id (Just 1) == id (Just 1)
+-- fmap id [1] == id [1]
+
+-- composition should be preserved in when lifting the function
+fmap (f . g) == fmap f . fmap g
+fmap ((+1) . (*2)) [1..5]
+-- [3, 5, 7, 9, 11]
+fmap (+1) . fmap (*2) $ [1..5]
+-- [3, 5, 7, 9, 11]
+```
+
+Functor is a
+way of lifting over structure (mapping) in such a manner that you
+don’t have to care about the structure because you’re not allowed to
+touch the structure anyway.
+`(+1)` in normal case, `fmap (+1)` is lifted `(+1)`
+
+
+ The point of Functor is to reify
+and be able to talk about cases where we want to reuse functions in
+the presence of more structure and be transparently oblivious to that
+additional structure.
+
+Composition law: This law says composing
+two functions lifted separately should produce the same result as
+if we composed the functions ahead of time and then lifted the
+composed function all together
+
+There's a Functor instance of `(->) r`, this can be read as `(r ->)` and means that in fmap you replace `f` with `(r ->)`
+
+negate fits in for `(r -> a)`,  
+`fmap :: (a -> b) -> (r -> a) -> r -> b`  when `f` is `(r ->)`
+To compare with maybe functor, 
+we do like this : `fmap (+1) (Just 1)` Here `(Just 1)` is type `Maybe Int`is a kind `*`.
+
+similarly: `fmap (+1) (negate)`, here `negate` is type `(->) n n` is kind `*`
+So in a way all functions are valid functors.
+
+In fact any unary function is a valid functor,
+Here is the implementation of instance in haskell
+```hs
+instance Functor ((->) a) where
+    fmap g ff = \x -> g (ff x)
+-- or in short words
+    fmap = (.)
+```
+SO it means when you map one function over another unary function, the mapped one executes afterwards according to composition.
+
+#### Lifting multiple times for multiple functors
+
+```hs
+fmap (fmap (+1)) [Just 1, Nothing, Just 2]
+-- [Just 2, Nothing, Just 3]
+-- or 
+
+(fmap . fmap) (+1) [Just 1, Nothing, Just 2]
+-- [Just 2, Nothing, Just 3]
+```
+
+```hs
+
+:t fmap (+1)
+fmap (+1) :: (Functor f, Num b) => f b -> f b
+
+:t (fmap . fmap) (+1)
+(fmap . fmap) (+1) :: (Functor f1, Functor f2, Num b) => f1 (f2 b) -> f1 (f2 b)
+
+-- basically
+-- penetrating multiple layers of functors using fmap . fmap
+
+ :t (fmap . fmap)     
+(fmap . fmap)
+  :: (Functor f1, Functor f2) => (a -> b) -> f1 (f2 a) -> f1 (f2 b)
+-- proof by writing signatures on paper
+```
+
+
+#### Functor restrictions (don't modify existing structure of instance Type)
+
+One should not touch the functor structure while implementing `fmap`.
+e.g.
+
+```hs
+-- Two :: * -> * -> *
+-- Two a :: * -> *
+data Two a b = Two a b deriving (Eq, Show)
+
+data Or a b = First a | Second b deriving (Eq, Show)
+
+-- bad implementation
+-- according to instance, (Two a) should not be touched
+instance Functor (Two a) where
+    fmap f (Two x y) = Two (f x) (f y) -- throws a nasty type error, because type of x changed to (f x)
+
+-- correct implementation
+instance Functor (Two a) where
+    fmap f (Two x y) = Two x (f y)
+
+-- bad implementation
+instance Functor (Or a) where
+    fmap f (First x) = First (f x) -- wrong, x should not be changed (f x)
+    fmap f (Second y) = Second (f y)
+
+-- correct implementation
+instance Functor (Or a) where
+    fmap f (First x) = First x
+    fmap f (Second y) = Second (f y) 
+```
+
+#### Lifting in general
+
+After lifting using `fmap`, the functions are generic and
+work for any functor e.g.
+```hs
+liftedInc :: (Functor f, Num b) => f b -> f b
+liftedInc = fmap (+1)
+liftedShow :: (Functor f, Show a) => f a -> f String
+liftedShow = fmap show
+
+liftedInc (Just 1)
+-- Just 2
+liftedShow (Just 1)
+-- Just 1
+liftedInc [1..5]
+-- [2,3,4,5,6]
+```
+
+
+#### Cases where functor is not possible
+
+Consider following:
+```hs
+newtype Mu f = InF { outF :: f (Mu f) } 
+-- Prelude> :k Mu
+-- Mu :: (* -> *) -> *
+```
+
+The above type cannot be a functor instance because it is not
+possible to convert `(* -> *) -> *` to `* -> *`, which is necesary for functor instance.
+
