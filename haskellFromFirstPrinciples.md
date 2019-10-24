@@ -964,7 +964,8 @@ First Nothing `mappend` First Nothing
 -- First { getFirst = Nothing }
 ```
 
-`Maybe` is a valid monoid, if the wrapped type is a `semigroup`.
+
+`Maybe` is a valid monoid, only if the wrapped type is a `semigroup`.
 It will just operate the wrapped items using the wrapped type's mappend and package everything back into a `Maybe`.
 e.g.
 ```hs
@@ -975,6 +976,12 @@ mappend (Just (Sum 2)) Nothing
 
 mappend (Just [1,1]) (Just [3,4])
 -- Just [1,1,3,4]
+
+(Just [2]) <> (Just [3]) <> (Just [4])
+-- Just [2,3,4]
+
+-- will give Type error
+mappend (Just 1) (Just 2)
 ```
 
 #### Declaring Monoid Instances
@@ -1043,6 +1050,10 @@ less important in applications
 -- (1, 3)
 
 ```
+
+Common Functor instances: `(Either a)`, `[]`, `Maybe`,
+`IO`, `((->) r)`, `((,) a)`.
+Others are `Sum`, `Product`
 
 The goal of fmapping is to leave the
 outer structure untouched while transforming the type arguments
@@ -1244,3 +1255,15 @@ possible to convert `(* -> *) -> *` to `* -> *`, which is necesary for functor i
 
 ### Applicatives
 
+Main defn:
+```hs
+class Functor f => Applicative (f :: * -> *) where
+  pure :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+  GHC.Base.liftA2 :: (a -> b -> c) -> f a -> f b -> f c
+  (*>) :: f a -> f b -> f b
+  (<*) :: f a -> f b -> f a
+```
+
+Common `Applicative` instances:
+`[]`, `Maybe`, `Either e`, `IO`, `((->) a)` and `((,) a)`.
