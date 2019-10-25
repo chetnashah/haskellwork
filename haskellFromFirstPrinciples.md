@@ -345,6 +345,24 @@ have to call show on its argument ourselves
 ### Recursion and Y Combinator
 
 
+
+### lookup
+
+lookup searches inside a list of tuples for a value that matches
+the input and returns the paired value wrapped inside a Maybe
+context.
+
+```hs
+lookup :: Eq a => a -> [(a, b)] -> Maybe b
+```
+
+#### lookup and zip work together often
+
+e.g.
+```hs
+ (lookup 3 $ zip [1, 2, 3] [4, 5, 6])
+```
+
 ### Bottom
 
 `_|_` or `bottom` is a term used in haskell to refer to computations that do
@@ -689,6 +707,9 @@ data Sum a b =
 
 data RecordProduct a b =
     RecordProduct { pFirst :: a, pSecond :: b } deriving (Eq, Show)
+
+-- creating values of record
+kk = RecordProduct { pFirst = "Hi", pSecond = 2 }
 ```
 
 
@@ -1267,3 +1288,139 @@ class Functor f => Applicative (f :: * -> *) where
 
 Common `Applicative` instances:
 `[]`, `Maybe`, `Either e`, `IO`, `((->) a)` and `((,) a)`.
+
+
+Tuple applicative implementation:
+
+```hs
+-- imposing monoid on the remaining structure for <*> implementation
+instance Monoid a => Applicative ((,) a) where
+    pure x = (mempty, x) -- seems weird but ok
+    (u, f) <*> (v, x) = (u `mappend` v, f x)
+```
+If you notice, use monoid for part that should not be touched. e.g. `mempty` in pure 
+and `<>/mappend` in the implementation of `ap/<*>` 
+
+Maybe applicative implementation instance:
+```hs
+instance Applicative Maybe where
+    pure = Just
+    Nothing <*> _ = Nothing -- no need of functions on the left, Nothing itself is valid
+    _ <*> Nothing = Nothing
+    Just f <*> Just a = Just (f a)
+```
+
+#### liftA2 
+
+Part of module: `Control.Applicative`
+
+`liftA2` lifts a normal binary function, and takes two applicative wrapped values to give final applicative wrapped value
+```hs
+liftA2 :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
+
+liftA2 (+) [1,2] [3,4]
+-- [4,5,5,6]
+
+-- liftA2 is same as doing an fmap first followed by an `ap` i.e. <*>
+-- The fmap will return unary functions inside a structure
+-- which is then used by `ap` to do its thing
+(+) <$> [1,2] <*> [3,4]
+-- [4,5,5,6]
+
+ max <$> [1, 2] <*> [1, 4]
+ -- [1, 4, 2, 4]
+
+  liftA2 max [1, 2] [1, 4]
+  -- [1, 4, 2, 4]
+```
+
+### Identity type
+
+```hs
+newtype Identity a = Identity a deriving (Eq, Ord, Show)
+```
+
+The Identity type here is a way to introduce structure without changing the semantics of what you’re doing. We’ll see it used with these
+typeclasses that involve function application around and over structure, but this type itself isn’t very interesting, as it has no semantic
+flavor.
+
+
+### Constant type
+
+Type acting like a `const` function at the same time.
+
+```hs
+newtype Constant a b = Constant { getConstant :: a } deriving (Eq, Ord, Show)
+```
+
+### Practical applications of `Maybe Applicative`
+
+A common pattern is to lift the constructor  when arguments are wrapped in a structure
+e.g. you can see `Name` and `Address` constructors applied to `(Maybe String)` by lifting done using `fmap`.
+
+```hs
+
+newtype Address = Address String deriving (Eq, Show)
+newtype Name = Name String deriving (Eq, Show)
+data Person = Person Name Address deriving (Eq, Show)
+
+validateLength :: Int -> String -> Maybe String
+validateLength maxLen s =
+    if (length s) > maxLen
+    then Nothing
+    else Just s
+
+mkName :: String -> Maybe Name
+mkName s = fmap Name $ validateLength 8 s
+
+mkAddress :: String -> Maybe Address
+mkAddress s = fmap Address $ validateLength 25 s
+
+Person <$> (mkName "chet") <*> (mkAddress "Main Avenue")
+-- Just (Person (Name "chet") (Address "Main Avenue"))
+```
+
+**Note** - This pattern can be continued on.
+e.g. suppose `Person` had 3 arguments e.g.
+`Name`, `Address` and `Phone`.
+ie. `data Person = Person Name Address Phone`
+then `Person = Name -> Address -> Phone -> Person`
+So it becomes a ternary function,
+but it can be still be considered a binary function like so
+`Person = Name -> Address -> (Phone -> Person)`
+So we would have to apply `<*>` one more time to get final person  e.g.
+`Person <$> (mkName "chet") <*> (mkAddress "Main Avenue") <*> (mkPhone "93202932032")`
+
+The core idea is: first `fmap` will introduce function in structure since only first value of the binary/ternary function is applied, then we carry on wrapped function application using `ap` till we have run out of all currying and arrive to a final value.
+
+Basically to use any binary/ternary/.. function within structure, start with `fmap`, and then keep doing `ap`.
+
+e.g.
+```hs
+(,,,) <$> Just 90 <*> Just 10 <*> Just "Tierness" <*> Just [1, 2, 3]
+-- Just (90, 10, "Tierness", [1,2,3])
+```
+### Applicative laws
+
+```hs
+--identity
+-- both pure and ap are used
+pure id <*> v = v
+
+-- composition
+pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+-- e.g 
+pure (.) <*> Just (+1) <*> Just (*2) <*> Just 1 == Just (+1) <*> (Just (*2) <*> Just 1)
+
+-- homomorphism 
+pure f <*> pure x = pure (f x)
+--e.g.
+pure (+1) <*> pure 1 == pure ((+1) 1)
+
+--interchange
+u <*> pure y = pure ($ y) <*> u
+-- ($ y) is interesting sectioning, a function that contains value
+-- and waitimg for fn to which value shall be applied
+-- ($ 2) is same as \f -> f $ 2
+Just (+2) <*> pure 2 == pure ($ 2) `mApply` Just (+2)
+```
