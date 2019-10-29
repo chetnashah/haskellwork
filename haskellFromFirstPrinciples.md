@@ -544,7 +544,7 @@ Predicting type of `foldr`, `foldl`:
 for foldl, it is `iv -> lv -> iv` (unit comes before lists, left type is return)
 2. initial value: type `a`.
 3. list values: type `[b]`.
-4. return value : same type as return value always. type a.
+4. return value : same type as initial value always. type a.
 
 ```hs
 -- derived from above
@@ -875,7 +875,11 @@ Also can be said as semigroup properties + identity element.
   mconcat = foldr mappend mepty
 ```
 
-Monoid Laws:
+Monoid Laws (3 laws):
+1. left identity
+2. right identity
+3. associativity
+
 ```hs
 -- Identity laws
 mappend mempty x = x
@@ -1123,7 +1127,10 @@ class AlsoImp v where
 ```
 
 
-#### Functor Laws
+#### Functor Laws (2 laws)
+
+1. identity
+2. composition
 
 Both rules: preserve identity fn and fn composition, make sure that structure is preserved.
 ```hs
@@ -1334,6 +1341,10 @@ liftA2 (+) [1,2] [3,4]
   -- [1, 4, 2, 4]
 ```
 
+
+Some use cases: As we have known earlier `mappend` is a valid binary function that acts on normal values like `a -> a -> a`,
+and hence `liftA2` is a valid use case to lift the `mappend`. and hence `liftA2 mappend` is useful in defining `mappend` for a structure when `mappend` for a substructure is available and provided as constraint.
+
 ### Identity type
 
 ```hs
@@ -1400,7 +1411,12 @@ e.g.
 (,,,) <$> Just 90 <*> Just 10 <*> Just "Tierness" <*> Just [1, 2, 3]
 -- Just (90, 10, "Tierness", [1,2,3])
 ```
-### Applicative laws
+### Applicative laws (4 laws)
+
+1. identity
+2. composition
+3. interchange
+4. homomorphism
 
 ```hs
 --identity
@@ -1423,4 +1439,334 @@ u <*> pure y = pure ($ y) <*> u
 -- and waitimg for fn to which value shall be applied
 -- ($ 2) is same as \f -> f $ 2
 Just (+2) <*> pure 2 == pure ($ 2) `mApply` Just (+2)
+```
+
+#### Either Applicative instance
+
+`Right f` fn applied to `Right ` value 
+returns `Right (f v)`.
+
+`Right f` fn applied to `Left v` value
+returns `Left v`.
+
+`Left v1` fn or value applied to `Left v2` value
+returns first one i.e.
+`Left v1`
+
+`Left f` applying throws a type error!
+
+
+We can have a different applicative instance implementation,  e.g.
+see data type below:
+```hs
+data Validation err a =
+    Failure err
+    | Success a
+    deriving (Eq, Show)
+```
+
+### ZipList
+
+`ZipList` is a part of `Control.Applicative`.
+
+`ZipList` basically wraps a list in constructor
+
+
+
+### Monad
+
+Any type which satisfies monad, is 
+also satisfying `applicative` and `functor`, meaning `pure`, `<*>` and `<$>` are already defined for that type.
+
+The main focus in case of monad 
+are functions that do transformation
+but also introduce some structure
+simultaneously.
+
+```hs
+class Applicative m => Monad m where
+    -- bind
+    (>>=) :: m a -> (a -> m b) -> m b
+    -- sequencing
+    (>>) :: m a -> m b -> m b
+    -- pure
+    return :: a -> m a
+```
+
+Allowing the function itself to alter the
+structure is something we’ve not seen in Functor and Applicative.
+
+Join removes one level structure from two level structure:
+```hs
+join :: Monad m => m (m a) -> m a
+```
+
+Lifting functions foor monad:
+```hs
+liftA :: Applicative f => (a -> b) -> f a -> f b
+liftM :: Monad m => (a1 -> r) -> m a1 -> m r
+
+liftA2 :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
+liftM2 :: Monad m => (a1 -> a2 -> r) -> m a1 -> m a2 -> m r
+
+liftA3 :: Applicative f => (a -> b -> c -> d) -> f a -> f b -> f c -> f d
+liftM3 :: Monad m => (a1 -> a2 -> a3 -> r) -> m a1 -> m a2 -> m a3 -> m r
+```
+
+### Do and Monad bind sugaring
+
+`x <- y` typically translates into `y >>= \x -> ...`
+
+```hs
+twoBinds :: IO ()
+twoBinds = do
+    putStrLn "name pls:"
+    name <- getLine
+    putStrLn "age pls:"
+    age <- getLine
+    putStrLn ("y helo thar: "
+    ++ name ++ " who is: "
+    ++ age ++ " years old.")
+    twoBinds' :: IO ()
+    twoBinds' =
+    putStrLn "name pls:" >>
+    getLine >>=
+    \name ->
+    putStrLn "age pls:" >>
+    getLine >>=
+    \age ->
+    putStrLn ("y helo thar: " ++ name ++ "who is: " ++ age ++ " years old.")
+```
+
+#### Monad realizations
+
+As a list
+```hs
+(>>=) :: Monad m => m a -> (a -> m b) -> m b
+(>>=) ::            [] a -> (a -> [] b) -> [] b
+(>>=) ::             [a] -> (a -> [b]) -> [b] --- same as flatmap
+
+return :: Monad m => a -> m a
+return :: a -> [ ] a
+return :: a -> [a]
+```
+`(>>=)` on lists is `concatMap`, e.g. the function is applied to each value, resulting in a list of lists which is then flattened
+
+Monad implementation for Maybe:
+```hs
+instance Monad Maybe where
+    return x = Just x
+    (Just x) >>= k = k x
+    Nothing >>= _ = Nothing -- even if u pass fn like \x -> Just 3, it will still return Nothing
+    -- in a monadic do block, rest of expression can be short circuited
+    -- and directly nothing can be returned.
+```
+
+Even `Nothing >>= undefined` returns `Nothing`.
+
+Monad realization as an Either
+```hs
+-- m ~ Either e
+(>>=) :: Monad m => m a -> (a -> m b) -> m b
+(>>=) :: Either e a -> (a -> Either e b) -> Either e b
+-- same as pure
+return :: Monad m => a -> m a
+return :: a -> Either e a
+```
+
+Either monad also short-circuits on the first
+`Left` it finds inside a `do` block.
+
+
+
+#### Monad laws (3 laws)
+1. left identity
+2. right identity
+3. Associativity
+
+```hs
+-- right identity
+m >>= return = m
+-- left identity
+return x >>= f = f x
+-- above laws say that return is neutral and
+-- should not do any compputation
+
+-- associativity
+(m >>= f) >>= g = m >>= (\x -> f x >>= g)
+```
+
+#### Kliesli composition
+
+The kliesli composition operator is `>=>`.
+In this composition the input monad generating functions execute from left to right.
+```hs
+(>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c
+
+(.) :: (b -> c) -> (a -> b) -> a -> c
+flip (.) :: (a -> b) -> (b -> c) -> a -> c
+```
+
+### Foldable
+
+Any one of `foldMap` or `foldr` needs to be defined in order to be instance
+of `Foldable` typeclass.
+
+```hs
+class Foldable t :: (* -> *) where
+{-# MINIMAL foldMap | foldr #-}
+  Data.Foldable.fold :: Monoid m => t m -> m
+  foldMap :: Monoid m => (a -> m) -> t a -> m
+  foldr :: (a -> b -> b) -> b -> t a -> b
+```
+`fold` helps you reduce structure to a value one level smaller (catamorphism). It is part of `Data.Foldable` which needs to be imported explicitly.
+
+`foldMap` maps each element of the structure to a Monoid and then combines
+the results using that instance of Monoid. i.e. it takes a monoid-converter `a->m`
+and a foldable structure `t a` and reduces structure around the resulting-monoid/s.
+
+`foldr` does not need `monoid`, since it has explicit, combiner/unit to work with.
+
+```hs
+-- foldable structure (list) around the monoid (Sum here) will be reduced
+-- fold will pick up combiner/mappend and identity/unit from the monoid provided
+fold [Sum 1, Sum 2, Sum 3, Sum 4, Sum 5]
+
+fold [1, 2, 3, 4, 5 :: Sum Integer]
+-- Sum { getSum = 15 }
+
+fold [1,2,3,4,5 :: Product Integer]
+-- Product { getProduct = 120 }
+
+
+foldMap Product [1,2,3,4]
+-- Product { getProduct = 24}
+
+foldMap Sum [1,2,3,4]
+-- Product { getSum = 10 }
+
+foldMap Any [True, False, True]
+-- True
+
+-- it is not necessary that foldMap fn is a monoid converter
+-- it can operate on transorming existing 
+foldMap (*5) [1, 2, 3 :: Product Integer]
+-- Product { getProduct = 750 }
+
+-- foldr will ignore monoid instance of the types
+-- instead it will use explicit combiner/unit
+ foldr (*) 3 [1, 2, 3, 4 :: Sum Integer]
+ -- Sum { getSum = 72 }
+
+```
+
+Foldable instance for Identity type:
+```hs
+-- Essentially job is to drop the foldable-structure on folding
+instance Foldable Identity where
+    foldr f z (Identity x) = f x z
+```
+
+Foldable instance for Maybe type:
+When reducing Nothing, you return mempty/unit
+```hs
+instance Foldable Optional where
+    foldr _ z Nada = z
+    foldr f z (Yep x) = f x z
+
+    foldMap _ Nada = mempty
+    foldMap f (Yep a) = f a
+```
+
+Also one needs to specify type to the fold result to disambiguate e.g.
+```hs
+ foldMap (+1) Nada -- error
+
+-- monoid mempty of type is returned, ignoring the function
+ foldMap (+1) Nada :: Sum Int
+ -- Sum { getSume = 0 }
+```
+
+Foldable instance for either type:
+Only the Left side is foldable, right type is not foldable and will error out
+```hs
+instance Foldable (Either a) -- Defined in `Data.Foldable'
+instance Traversable (Either a) -- Defined in `Data.Traversable'
+
+fold (Left 3)
+-- ()
+
+fold (Right 3)
+-- Type Error
+```
+
+#### Derived foldable ops
+```hs
+-- convert foldable structure to list
+toList :: Foldable t => t a -> [a]
+
+toList (Just 1)
+-- [1]
+
+-- emptiness test of foldable structure
+null :: t a -> Bool
+
+null Nothing
+-- True
+
+null []
+-- True
+
+null (Left 3)
+-- True
+
+-- length of foldable structure
+length :: t a -> Int
+
+-- fist item is part of 
+length (1, 2)
+-- 1
+
+fmap length Just [1, 2, 3]
+-- 1
+-- The reason is interesting - fmapping length over Just constructor becomes
+-- (length . Just) [1, 2, 3]
+
+-- element present in structure ?
+elem :: Eq a => a -> t a -> Bool
+
+
+-- | The largest element of a non-empty structure.
+maximum :: Ord a => t a -> a
+-- | The least element of a non-empty structure.
+minimum :: Ord a => t a -> a
+-- | The 'sum' function computes the sum of the
+-- numbers of a structure.
+sum :: (Foldable t, Num a) => t a -> a
+-- | The 'product' function computes the product
+-- of the numbers of a structure.
+product :: (Foldable t, Num a) => t a -> a
+
+product Nothing
+-- 1
+sum Nothing
+-- 0
+```
+
+FoldMap in terms of `foldr`:
+```hs
+foldMap' :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
+foldMap' f = foldr (\x y -> (f x) <> y) mempty
+```
+
+`fold` in terms of `foldmap`:
+```hs
+fold' t = foldMap ((<>) mempty) t
+```
+
+Filter foldable using `foldMap`:
+```hs
+filterF :: (Applicative f, Foldable t, Monoid (f a))
+        => (a -> Bool) -> t a -> f a
+filterF f t = foldMap (\x -> if f x then pure x else mempty) t
 ```

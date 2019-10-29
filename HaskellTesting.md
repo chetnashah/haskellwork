@@ -10,6 +10,13 @@ called Gen for generating its random data.
 
 Use `arbitrary` to create generators from specified type.
 
+In order to test,
+You will eventually come up with a 
+function that takes your structure+implementation
+to be tested and returns a true/false
+value about it. e.g.
+`prop_idempotent xs = qsort (qsort xs) == qsort xs`
+
 Sample generators using `sample` or `sample'`
 ```hs
 -- QuickCheck
@@ -188,4 +195,24 @@ functorCompose' x (Fun _ f) (Fun _ g) =
 
 type IntFC = [Int] -> Fun Int Int -> Fun Int Int -> Bool
 quickCheck (functorCompose' :: IntFC)
+```
+
+### Test.QuickCheck.Checkers
+
+we use `Checkers` library:
+`Checkers` wraps up the expected properties associated with various standard type classes as QuickCheck properties. Also some morphism properties. It also provides arbitrary instances and generator combinators for common data types.
+
+`quickBatch` is the main function that
+runs a batch of tests.
+```hs
+quickBatch :: TestBatch -> IO ()
+quickBatch $ applicative [("b", "w", 1)]
+-- The values given above are not evaluated, only to extract types e.g.
+
+-- works fine since no evaluation happens, only types are extracted
+-- Prelude> let trigger = undefined :: [(String, String, Int)]
+-- Prelude> quickBatch (applicative trigger)
+
+
+applicative :: m (a, b, c) -> TestBatch
 ```
