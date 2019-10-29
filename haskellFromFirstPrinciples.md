@@ -869,11 +869,15 @@ A monoid is binary associative operation with identity.
 Also can be said as semigroup properties + identity element.
 
 ```hs
+class Semigroup a => Monoid a where
   mempty :: a
   mappend :: a -> a -> a
   mconcat :: [a] -> a
   mconcat = foldr mappend mepty
 ```
+
+Type of the `mempty` is same as the monoid instance type, for e.g. if we have `instace Monoid (Abc a) where ...`, then type of `mempty` is `Abc a`,
+and `mappend`, `<>` also operate on the same type.
 
 Monoid Laws (3 laws):
 1. left identity
@@ -1768,5 +1772,7 @@ Filter foldable using `foldMap`:
 ```hs
 filterF :: (Applicative f, Foldable t, Monoid (f a))
         => (a -> Bool) -> t a -> f a
+-- we see map step introduces some structure and fold drops it, so at the end of fold,
+-- we still have a structure - f a
 filterF f t = foldMap (\x -> if f x then pure x else mempty) t
 ```
