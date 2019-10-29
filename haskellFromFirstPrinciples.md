@@ -1,4 +1,7 @@
 
+
+![type class hierarchy](./images/typeclss.PNG)
+
 ### Type constraints
 
 ```hs
@@ -1505,6 +1508,12 @@ Join removes one level structure from two level structure:
 join :: Monad m => m (m a) -> m a
 ```
 
+Flipped bind operator is also really useful:
+```hs
+:t (=<<)
+(=<<) :: Monad m => (a -> m b) -> m a -> m b
+```
+
 Lifting functions foor monad:
 ```hs
 liftA :: Applicative f => (a -> b) -> f a -> f b
@@ -1581,7 +1590,8 @@ return :: a -> Either e a
 Either monad also short-circuits on the first
 `Left` it finds inside a `do` block.
 
-
+IO:
+you read `ab :: IO String` as a description of an effect, which when run (usually forced by another/parent IO execution) would produce a string?
 
 #### Monad laws (3 laws)
 1. left identity
@@ -1612,6 +1622,8 @@ flip (.) :: (a -> b) -> (b -> c) -> a -> c
 ```
 
 ### Foldable
+
+Main Intent: process values in a structure, combine/summarize them in some way, and drop the structure e..g (List folding).
 
 Any one of `foldMap` or `foldr` needs to be defined in order to be instance
 of `Foldable` typeclass.
@@ -1775,4 +1787,123 @@ filterF :: (Applicative f, Foldable t, Monoid (f a))
 -- we see map step introduces some structure and fold drops it, so at the end of fold,
 -- we still have a structure - f a
 filterF f t = foldMap (\x -> if f x then pure x else mempty) t
+```
+
+### Traversable
+
+Intent is to traverse a structure and do an action at each node. the action is usually applicative `ap` or monadic.
+
+Traversable represents data structures which can be traversed while perserving the shape, Traversable only defines a way to move through the data structure, but not a way to change it.
+
+For a structure to be traversable, it must
+be of kind `* -> *`, but also be `Foldable`
+and a `Functor`. a `Traversable` structure is actually a `Traversable,Foldable,Mappable` structure.
+
+Traversable allows you to transform elements inside the structure
+like a Functor, producing Applicative effects along the way, and lift
+those potentially multiple instances of Applicative structure outside
+of the Traversable structure. It is commonly described as a way to
+traverse a data structure, mapping a function inside a structure while
+accumulating the applicative contexts along the way
+
+```hs
+class (Functor t, Foldable t) => Traversable (t :: * -> *) where
+ -- action traverses over traversable and returns 
+ -- an applicative of traversable
+  traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
+  -- traversable of applicative is changed to
+  -- applicative of traversable
+  sequenceA :: Applicative f => t (f a) -> f (t a)
+  mapM :: Monad m => (a -> m b) -> t a -> m (t b)
+  sequence :: Monad m => t (m a) -> m (t a)
+  {-# MINIMAL traverse | sequenceA #-}
+```
+
+`traverse` in terms of `sequenceA` and `fmap`
+```hs
+traverse f = sequenceA . fmap f
+-- try a proof at type level
+```
+
+`sequenceA` in terms of `traverse`:
+```hs
+sequenceA = traverse id
+-- type proof is simple
+-- passing id where a->fb is expected means
+-- a = f b
+-- so t a -> f (t b)
+-- becomes t (f b) -> f (t b) which is sequenceA.
+```
+
+`sequenceA` helps switch context of applicative and traversable:
+```hs
+sequenceA [Just 1, Just 2, Just 3]
+-- Just [1,2,3]
+
+sequenceA [[1],[2],[3]]
+-- [[1, 2, 3]]
+
+sequenceA [Just 1, Just 2, Nothing]
+-- Nothing
+
+sequenceA [[1], [2], []]
+-- []
+```
+
+`traverse` is `sequence. fmap`
+
+```hs
+sequenceA $ fmap Just [1, 2, 3]
+-- Just [1, 2, 3]
+
+traverse Just [1, 2, 3]
+-- Just [1, 2, 3]
+```
+
+`mapM`: in the traverse definition, instead of having a constraint of `Applicative f`, we have
+constraint of `Monad m`.
+
+```hs
+mapM :: (Traversable t, Monad m) => (a -> m b) -> t a -> m (t b)
+```
+
+Similarly, `sequence` is the `monad` version of `sequenceA`,
+```hs
+sequence :: (Traversable t, Monad m) => t (m a) -> m (t a)
+```
+
+It’s usually better to use traverse whenever we see a sequence or
+sequenceA combined with a map or fmap.
+
+```hs
+sequence [Right 3, Right 4, Left "Oh noes", Right 22]
+-- Left "Oh noes"
+
+sequence [Right 3, Right 4]
+-- Right [3,4]
+```
+
+#### Traversable laws
+
+```hs
+-- Naturality
+t . traverse f = traverse (t . f)
+
+-- Identity
+traverse Identity = Identity
+
+-- Composition
+traverse (Compose . fmap g . f) = Compose . fmap (traverse g) . traverse f
+```
+
+Laws for `sequence`:
+```hs
+-- Naturality
+t . sequenceA = sequenceA . fmap t
+
+-- Identity
+sequenceA . fmap Identity = Identity
+
+-- Composition
+sequenceA . fmap Compose = Compose . fmap sequenceA . sequenceA
 ```
