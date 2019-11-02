@@ -1850,7 +1850,7 @@ sequenceA [[1], [2], []]
 -- []
 ```
 
-`traverse` is `sequence. fmap`
+`traverse` is `sequence . fmap`
 
 ```hs
 sequenceA $ fmap Just [1, 2, 3]
@@ -1906,4 +1906,34 @@ sequenceA . fmap Identity = Identity
 
 -- Composition
 sequenceA . fmap Compose = Compose . fmap sequenceA . sequenceA
+```
+
+### Reader Monad
+
+The inspiration is more explicit notation for function `r -> a`.
+Fact: Normal functionas are valid functor, applicative as well as monad.
+
+`Reader` is the newtype wrapper for the function type.
+The `𝑟` is the type we’re “reading” in and `𝑎` is the result type of our
+function.
+
+The `Reader` data constructor is essentially a function which is named as `runReader`.
+
+
+```hs
+newtype Reader r a =
+    Reader { runReader :: r -> a }
+```
+
+Reader instance for functor:
+```hs
+instance Functor (Reader r) where
+    fmap :: (a -> b) -> Reader r a -> Reader r b
+    fmap f (Reader ra) = Reader $ \r -> f (ra r)
+```
+
+Applicative Instance for Reader:
+```hs
+    (<*>) :: Reader r (a -> b) -> Reader r a -> Reader r b
+    (Reader rab) <*> (Reader ra)  = Reader (\r -> rab r (ra r))
 ```
