@@ -1931,9 +1931,128 @@ instance Functor (Reader r) where
     fmap :: (a -> b) -> Reader r a -> Reader r b
     fmap f (Reader ra) = Reader $ \r -> f (ra r)
 ```
+In terms of functions it can be seen as:
+```hs
+    (<$>) :: (a -> b) -> (r -> a) -> (r -> b)
+```
 
 Applicative Instance for Reader:
 ```hs
     (<*>) :: Reader r (a -> b) -> Reader r a -> Reader r b
     (Reader rab) <*> (Reader ra)  = Reader (\r -> rab r (ra r))
+```
+
+Monad bind for functions type signature:
+```hs
+(>>=) :: Monad m =>     m a  -> (a -> (  m b )) ->  m b
+                    (r -> a) -> (a -> (r -> b)) -> (r -> b)
+
+(>>=) :: Monad m => m a -> (a ->      m b)   ->      m b
+(>>=) ::       (->) r a -> (a -> (->) r b)   -> (->) r b
+(>>=) ::        (r -> a) -> (a -> r -> b)    -> (r ->  b)
+```
+
+Contrasting with applicative types:
+```hs
+(<*>) :: (->) r (a -> b) -> (->) r a -> (->) r b
+(<*>) ::   (r -> a -> b) -> (r -> a) -> (r -> b)
+```
+
+PUtting all of them next to each other:
+```hs
+(<$>) :: (a -> b) -> (r -> a) -> (r -> b)
+(<*>) :: (r -> a -> b) -> (r -> a) -> (r -> b)
+(>>=) :: (r -> a) -> (a -> r -> b) -> (r -> b)
+```
+
+### State
+
+the State monad can carry any type of state. We'll refer to the state's unknown type as s.
+
+type signature that captures this idea is s -> (a, s): take a state s, do something with it, and return a result a and possibly a new state s.
+
+```hs
+newtype State s a = State { runState :: s -> (a, s) }
+
+-- see runstate is a binary arg function
+-- first is State data type instance and second is some arbitrary state s
+runState :: State s a -> s -> (a, s)
+```
+
+State instances with slightly changed name for easier understanding:
+```hs
+newtype Moi s a = Moi { runMoi :: s -> (a, s)}
+
+-- functor
+instance Functor (Moi s) where
+    fmap :: (a -> b) -> Moi s a -> Moi s b
+    fmap f (Moi sasfn) = Moi $ \s -> let (a, s') = sasfn s
+                                   in (f a, s')
+                                         
+-- applicative instance
+instance Applicative (Moi s) where
+
+    pure :: a -> Moi s a
+    pure x = Moi $ \s -> (x, s)
+
+    (<*>) :: Moi s (a -> b) -> Moi s a -> Moi s b
+    (Moi sasx) <*> (Moi sasy) = Moi $ \s -> let (ab, s') = sasx s
+                                            in
+                                                let (a, s'') = sasy s'
+                                                in (ab a, s'') 
+
+instance Monad (Moi s) where
+    (>>=) (Moi sas) fn = Moi (\s0 -> let (a, s1) = sas s0
+                                     in
+                                         let (Moi sbs) = fn a
+                                         in sbs s1)
+
+
+```
+
+#### Random
+
+```hs
+
+class Random a where
+  randomR :: RandomGen g => (a, a) -> g -> (a, g)
+  random :: RandomGen g => g -> (a, g)
+  randomRs :: RandomGen g => (a, a) -> g -> [a]
+  randoms :: RandomGen g => g -> [a]
+  randomRIO :: (a, a) -> IO a
+  randomIO :: IO a
+  {-# MINIMAL randomR, random #-}
+        -- Defined in `System.Random'
+instance Random Word -- Defined in `System.Random'
+instance Random Integer -- Defined in `System.Random'
+instance Random Int -- Defined in `System.Random'
+instance Random Float -- Defined in `System.Random'
+instance Random Double -- Defined in `System.Random'
+instance Random Char -- Defined in `System.Random'
+instance Random Bool -- Defined in `System.Random'
+
+class RandomGen g where
+  next :: g -> (Int, g)      
+  genRange :: g -> (Int, Int)
+  split :: g -> (g, g)       
+  {-# MINIMAL next, split #-}
+        -- Defined in `System.Random'
+instance RandomGen StdGen -- Defined in `System.Random'
+
+-- two Random values together
+-- it is also instance of RandomGen above, so supports next
+data StdGen
+  = System.Random.StdGen {-# UNPACK #-}GHC.Int.Int32                         {-# UNPACK #-}GHC.Int.Int32        -- Defined in `System.Random'
+instance Show StdGen -- Defined in `System.Random'
+instance Read StdGen -- Defined in `System.Random'  
+instance RandomGen StdGen -- Defined in `System.Random'
+
+-- make a StdGen using mkStdGen
+mkStdGen :: Int -> StdGen
+stdg = mkStdGen 0
+
+-- get random value between a range given range and generator
+randomR :: (Random a, RandomGen g) => (a, a) -> g -> (a, g)
+randomR (1, 100) stdg
+-- (84,40014 40692)
 ```
