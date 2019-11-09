@@ -711,7 +711,7 @@ Let and Where are fundamentally different.
 #### Where clause
 
 `Where` is a useful clause that bounds to surrounding construct
-and can have multiple declarations within itself (they can also use each other)
+and can have multiple declarations (each on a new line) within itself (they can also use each other)
 e.g.
 ```hs
 fn a b c = x + y + z

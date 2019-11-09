@@ -1503,6 +1503,12 @@ class Applicative m => Monad m where
 Allowing the function itself to alter the
 structure is something we’ve not seen in Functor and Applicative.
 
+`(>>)`: Sequentially compose two actions, discarding any value produced by the first, like sequencing operators (such as the semicolon) in imperative languages. Also it is same as `*>` if it is already defined.
+Converting it in terms of bind:
+```hs
+m >> k = m >>= \_ -> k
+```
+
 Join removes one level structure from two level structure:
 ```hs
 join :: Monad m => m (m a) -> m a
@@ -1788,6 +1794,21 @@ filterF :: (Applicative f, Foldable t, Monoid (f a))
 -- we still have a structure - f a
 filterF f t = foldMap (\x -> if f x then pure x else mempty) t
 ```
+#### mapM_
+It is a part of `Data.Foldable` and `Control.Monad`.
+Map each element of structure to a monadic action,
+evaluate these actions from left to right,
+and ignore the reselts.
+```hs
+mapM_ :: (Foldable t, Monad m) => (a -> m b) -> t a -> m ()
+```
+
+#### sequence_
+A part of `Data.Foldable` and `Control.Monad`, just like `sequenceA`.
+Evaluate each monadic action in the structure from left to right, and ignore the results.
+```hs
+sequence_ :: (Foldable t, Monad m) => t (m a) -> m ()
+```
 
 ### Traversable
 
@@ -1979,6 +2000,59 @@ newtype State s a = State { runState :: s -> (a, s) }
 runState :: State s a -> s -> (a, s)
 ```
 
+State utilities:
+```hs
+-- construct state monad computation from a fn, inverse of runState
+state :: Monad m => (s -> (a, s)) -> StateT s m a
+-- main fn, given a state computation and a state,
+-- return a pair of return value and new state
+runState :: State s a -> s -> (a, s)
+-- only give return value/fst part of state computation
+evalState :: State s a -> s -> a
+evalState SS s = fst (runState SS s)
+-- only give final state/snd part of state computation
+execState :: State s a -> s -> s
+execState SS s = snd (runState SS s)
+
+-- construct a state computation where default return value is unit
+-- and state is what is given to put, and the outside state given is ignored, think putState
+put :: Monad m => s -> StateT s m ()
+put :: s -> State s () -- under Identity
+put = state $ \_ -> ((), s)
+runState (put "Hola") "Woot"
+-- ((), "Hola") 
+
+
+-- construct a state computation where the return value is also the state
+get :: Monad m => StateT s m s
+get :: State s s -- under Identity
+get = state $ \s -> (s, s)
+runState get "Amazing!"
+-- ("Amazing", "Amazing!")
+
+-- state effects execute from left to right
+runStateT (put 2 >> get) 10021490234890
+-- (2, 2)
+
+-- using these together
+execState (put "Hola") "Shh"
+"Hola"
+execState (get) "Wombat"
+"Wombat"
+
+evalState (put "Dola") "Nomad"
+()
+evalState (get) "SoCool"
+"SoCool"
+-- 
+mapState :: ((a, s) -> (b, s)) -> State s a -> State s b
+
+
+runStateT :: StateT s m a -> s -> m (a, s)
+```
+
+
+
 State instances with slightly changed name for easier understanding:
 ```hs
 newtype Moi s a = Moi { runMoi :: s -> (a, s)}
@@ -2006,8 +2080,25 @@ instance Monad (Moi s) where
                                      in
                                          let (Moi sbs) = fn a
                                          in sbs s1)
+```
 
+#### StateT
+Part of `Control.Monad.Trans.State`
+```hs
+type State s = StateT s Identity
 
+-- StateT typeconstructor has 3 type params - s,m,a
+newtype StateT s m a = StateT { runStateT :: s -> m (a,s) }
+-- same as above
+newtype StateT s (m :: Type -> Type) a = StateT (s -> m (a, s))
+
+runStateT :: StateT s m a -> s -> m (a, s)
+-- | A state monad parameterized by the type @s@ of the state to carry.
+--
+-- The 'return' function leaves the state unchanged, while @>>=@ uses
+-- the final state of the first computation as the initial state of
+-- the second.
+type State s = StateT s Identity
 ```
 
 #### Random
@@ -2055,4 +2146,113 @@ stdg = mkStdGen 0
 randomR :: (Random a, RandomGen g) => (a, a) -> g -> (a, g)
 randomR (1, 100) stdg
 -- (84,40014 40692)
+```
+
+### ALternative tyepclass
+Part of `Control.Applicative`
+Also known as : `A monoid on applicative functors`, basically for Applicative functors which also have a monoid structure
+Some instances are `[], Maybe, IO, Either`.
+
+The basic intuition is that `empty` represents some sort of "failure", and `(<|>)` represents a choice between alternatives. (However, this intuition does not fully capture the nuance possible; see the section on Laws below.) Of course, `(<|>)` should be associative and empty should be the identity element for it.
+
+```hs
+class Applicative f => Alternative f where
+    empty :: f a
+    (<|>) :: f a -> f a -> f a -- choose the one that fails less
+
+    -- | One or more.
+    some :: f a -> f [a]
+    some v = some_v
+        where
+            many_v = some_v <|> pure []
+            some_v = (fmap (:) v) <*> many_v
+
+    -- | Zero or more.
+    many :: f a -> f [a]
+    many v = many_v
+        where
+            many_v = some_v <|> pure []
+            some_v = (fmap (:) v) <*> many_v
+```
+
+`<|>` usually will pick the one that failed less
+e..g
+```hs
+ Left "error" <|> Right 5
+ -- Right 5
+ Nothing <|> Just 3
+ -- Just 3
+ [1,2] <|> [3,4,5] -- in case of lists it concatenates
+ -- [1,2,3,4,5]
+ pure [4,5,6,7,8] <|> pure [1,2,3] -- choose bigger one when wrapped inside applicative
+ -- [4,5,6,7,8]
+```
+Alternative laws:
+
+```hs
+-- monoid laws
+empty <|> x = x
+x <|> empty = x
+x <|> (y <|> z) = (x <|> y) <|> z
+
+-- interaction with applicative
+-- left zero law
+empty <*> f = empty
+
+-- right zero law
+f <*> empty = empty
+
+-- left distribution
+(a <|> b) <*> c = (a <*> c) <|> (b <*> c)
+
+-- right distribution
+a <*> (b <|> c) = (a <*> b) <|> (a <*> c)
+
+-- left catch
+(pure a) <|> x = pure a
+
+```
+### MonadPlus typeclass
+
+MonadPlus is closely related to `Alternative`:
+```hs
+class Monad m => MonadPlus m where
+  mzero :: m a                  -- equivalent to empty of Alternative
+  mplus :: m a -> m a -> m a    -- equivalent to <|> of Alternative
+```
+
+for types that have instances of both Alternative and MonadPlus, 
+mzero and mplus should be equivalent to empty and (<|>) respectively.
+
+One might legitimately wonder why the seemingly redundant MonadPlus class exists. 
+Part of the reason is historical: just like Monad existed in Haskell long before Applicative was introduced, MonadPlus is much older than Alternative
+
+
+### Monad Transformers
+
+Monads are not composable. This poses a problem, since composition is one of the foremost patterns in functional programming. However, many alternatives have been devised. One of the most common is the monad transformer.
+
+special types that allow us to roll two monads into a single one that shares the behavior of both.
+
+A monad transformer is fundamentally a wrapper type. It is generally parameterized by another monadic type. You can then run actions from the inner monad, while adding your own customized behavior for combining actions in this new monad
+
+### Compose type
+Part of `Data.Functor.Compose`.
+
+```hs
+-- | Right-to-left composition of functors.
+-- The composition of applicative functors is always applicative,
+-- but the composition of monads is not always a monad.
+newtype Compose (f :: k -> *) (g :: k1 -> k) (a :: k1)= Compose {getCompose :: f (g a)}
+
+-- The above definition is kind polymorphic,
+-- but for simpler considerations 
+newtype Compose (f :: * -> *) (g :: * -> *) (a :: *)= Compose {getCompose :: f (g a)}
+
+-- Compose use case
+k = Compose $ Just [1]
+fmap (+1) k
+Compose (Just [2])
+pure (+1) <*> k
+Compose (Just [2])
 ```
