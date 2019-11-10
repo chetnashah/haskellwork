@@ -2234,10 +2234,19 @@ Monads are not composable. This poses a problem, since composition is one of the
 
 special types that allow us to roll two monads into a single one that shares the behavior of both.
 
-A monad transformer is fundamentally a wrapper type. It is generally parameterized by another monadic type. You can then run actions from the inner monad, while adding your own customized behavior for combining actions in this new monad
+A monad transformer is a variant of an ordinary type that takes additional type argument which is assumed to have monadic instance. The transformer variant of a type gives us a Monad instance that binds over both bits of structure and allowes us to combine their effects. In essence a monad transformer is a type constructor that
+takes monad as an argument.
+
+
+A monad transformer is fundamentally a wrapper type. It is generally parameterized by another monadic type. You can then run actions from the inner monad, while adding your own customized behavior for combining actions in this new monad.
+
+Usually expressed as newtypes.
+
 
 ### Compose type
 Part of `Data.Functor.Compose`.
+Given `f` and `g` type constructors of kind `* -> *` and `a` being a concrete type i.e. kind `*`, Compose creates a newtypes that is a composition
+of those type constructors.
 
 ```hs
 -- | Right-to-left composition of functors.
@@ -2245,14 +2254,31 @@ Part of `Data.Functor.Compose`.
 -- but the composition of monads is not always a monad.
 newtype Compose (f :: k -> *) (g :: k1 -> k) (a :: k1)= Compose {getCompose :: f (g a)}
 
+-- :k Compose
+Compose :: (* -> *) -> (* -> *) -> * -> *
+
 -- The above definition is kind polymorphic,
 -- but for simpler considerations 
 newtype Compose (f :: * -> *) (g :: * -> *) (a :: *)= Compose {getCompose :: f (g a)}
 
+-- You compose two functors you get another functor
+instance (Functor f, Functor g) => Functor (Compose f g) where
+    fmap f (Compose fga) = Compose $ (fmap . fmap) f fga 
+
 -- Compose use case
 k = Compose $ Just [1]
-fmap (+1) k
+fmap (+1) k -- fmap for a two structures wrapped is fmap . fmap 
 Compose (Just [2])
 pure (+1) <*> k
 Compose (Just [2])
+
+-- some interesting tricks
+-- since Compose f g is * -> *
+-- innerMost Compose Maybe [] is one structure
+-- outer Compose [] Maybe is second structure
+-- Outermost Compose second first is the final structure
+vv = Compose $ Compose [Just (Compose $ Just [1])]
+
+fmap (+1) vv
+-- (Compose [Just (Compose (Just [2]))])
 ```
