@@ -38,6 +38,19 @@ uncurry :: (t1 -> t2 -> t) -> (t1, t2) -> t
 ```
 
 
+### Type application in type signature
+
+`Parantheses` in type signature are important. 
+e.g. if type is `f (g a)`, you cannot ignore the parantheses. 
+
+`Type terms` in a type signature also associate to left, i.e. default application order is left first.
+e.g.
+`data MTT a b c d = MTT a b c d`
+We can write `MTT a b c d` as `((((MTT a) b) c) d)`
+The meaning of the brackets/parantheses is same as that for normal values:
+It means group together/ happens before/together.
+
+
 ### Monomorphism restriction
 
 If you forget to provide a type signature, sometimes this rule will fill the free type variables with specific types using "type defaulting" rules. The resulting type signature is always less polymorphic than you'd expect, so often this results in the compiler throwing type errors at you in situations where you expected it to infer a perfectly sane type for a polymorphic expression.
@@ -1532,6 +1545,21 @@ liftA3 :: Applicative f => (a -> b -> c -> d) -> f a -> f b -> f c -> f d
 liftM3 :: Monad m => (a1 -> a2 -> a3 -> r) -> m a1 -> m a2 -> m a3 -> m r
 ```
 
+### Monad laws in terms of fmap, join and pure
+
+```hs
+fmap id = id
+fmap (f . g) = fmap f . fmap g
+
+pure . f = fmap f . pure
+
+-- join based
+join . fmap (fmap f) = fmap f . join
+join . pure = id
+join . fmap pure = id
+join . fmap join = join . join
+```
+
 ### Do and Monad bind sugaring
 
 `x <- y` typically translates into `y >>= \x -> ...`
@@ -1813,6 +1841,8 @@ sequence_ :: (Foldable t, Monad m) => t (m a) -> m ()
 ### Traversable
 
 Intent is to traverse a structure and do an action at each node. the action is usually applicative `ap` or monadic.
+
+Suffices to define either `traverse` operation or `sequenceA` operation.
 
 Traversable represents data structures which can be traversed while perserving the shape, Traversable only defines a way to move through the data structure, but not a way to change it.
 
@@ -2234,14 +2264,41 @@ Monads are not composable. This poses a problem, since composition is one of the
 
 special types that allow us to roll two monads into a single one that shares the behavior of both.
 
-A monad transformer is a variant of an ordinary type that takes additional type argument which is assumed to have monadic instance. The transformer variant of a type gives us a Monad instance that binds over both bits of structure and allowes us to combine their effects. In essence a monad transformer is a type constructor that
-takes monad as an argument.
+A monad transformer is a variant of an ordinary type that takes additional type argument which is assumed to have monadic instance. The transformer variant of a type gives us a Monad instance that binds over both bits of structure and allowes us to combine their effects. `In essence a monad transformer is a type constructor that takes monad as an argument`. 
 
+Transformers are a means
+of avoiding making a one-off Monad for every possible combination
+of types. e..g
+```hs
+-- bad
+newtype MaybeIO a = MaybeIO { runMaybeIO :: IO (Maybe a) }
+```
 
 A monad transformer is fundamentally a wrapper type. It is generally parameterized by another monadic type. You can then run actions from the inner monad, while adding your own customized behavior for combining actions in this new monad.
 
 Usually expressed as newtypes.
 
+#### IdentityT transformer
+
+```hs
+newtype IdentityT f a = IdentityT { runIdentityT :: f a }
+deriving (Eq, Show)
+
+-- The functor and applicative instances are similar to
+-- that of Identity, only thing thats changed is extra stuff
+-- for structure f
+instance (Functor m) => Functor (IdentityT m) where
+    fmap f (IdentityT fa) = IdentityT (fmap f fa)
+
+instance (Applicative m) => Applicative (IdentityT m) where
+    pure x = IdentityT (pure x)
+    (<*>) (IdentityT fab) (IdentityT fa) = IdentityT (fab <*> fa)
+
+instance (Monad m) => Monad (IdentityT m) where
+    return = pure
+    (>>=) (IdentityT ma) fn = fn ma
+    -- IdentityT $ ma >>= runIdentityT . fn
+```
 
 ### Compose type
 Part of `Data.Functor.Compose`.
@@ -2292,7 +2349,29 @@ instance (Applicative f, Applicative g) => Applicative (Compose f g) where
     (<*>) :: Compose f g (p -> q) -> Compose f g p -> Compose f g q
     (<*>) (Compose fgx) (Compose fgy) = Compose $ liftA2 (<*>) fgx fgy
 
+    -- <*> :: f (a -> b) -> f a -> f b
+    -- liftA2 :: (p -> q -> r) -> g p -> g q -> g r
+    -- systematically replacing, we get below
+    -- liftA2 <*> :: (f (a->b) -> f a -> f b) -> g (f (a->b)) -> g (f (a)) -> g (f b)
     -- or
     -- (<*>) (Compose fgx) (Compose fgy) = Compose $ (<*>) <$> fgx <*> fgy
 
+```
+
+For more reference: 
+http://web.cecs.pdx.edu/~mpj/pubs/RR-1004.pdf
+
+
+### BiFunctor
+```hs
+class Bifunctor p where
+{-# MINIMAL bimap | first, second #-}
+    bimap :: (a -> b) -> (c -> d) -> p a c -> p b d
+    bimap f g = first f . second g
+
+    first :: (a -> b) -> p a c -> p b c
+    first f = bimap f id
+
+    second :: (b -> c) -> p a b -> p a c
+    second = bimap id
 ```
