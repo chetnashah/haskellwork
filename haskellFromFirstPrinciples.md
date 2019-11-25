@@ -624,6 +624,10 @@ representation of the type it contains. It can do this because it’s not
 allowed to be a record (product type) or tagged union (sum type). The difference between newtype and the type it contains is gone by
 the time the compiler generates the code.
 
+newtype only allows single fields, and parentheses allow you to make a single field e.g.
+`newtype Mytype f a = Mytype (f a)` is a valid definition,
+but usually it is a good practice to define it with a record syntax e.g.
+`newtype Mytype f a = Mytype { runMyType :: f a }`
 
 #### newtype vs type alias
 
