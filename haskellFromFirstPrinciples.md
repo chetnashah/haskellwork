@@ -2296,8 +2296,9 @@ instance (Applicative m) => Applicative (IdentityT m) where
 
 instance (Monad m) => Monad (IdentityT m) where
     return = pure
+
+    (>>=) :: IdentityT k a -> (a -> IdentityT k b) -> IdentityT k b
     (>>=) (IdentityT ka) fn = IdentityT $ ka >>= \a -> runIdentityT (fn a) 
-    -- IdentityT $ ma >>= runIdentityT . fn
 ```
 
 ### Compose type
