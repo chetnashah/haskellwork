@@ -1,4 +1,6 @@
 
+https://www.haskell.org/definition/haskell98-report.pdf
+
 ### REPL
 
 ghci is repl for haskell
@@ -83,6 +85,22 @@ Sectioning is a concise way to partially apply arguments to infix operators.
 ### Haskell Stack
 Recommended tool for beginners to manage tools/dependencies/projects.
 
+
+### Names and namespaces
+
+Six kinds of names:
+1. variables - lowercase
+2. Constructors - uppoercase 
+3. Type constructors - uppercase
+4. Type variables - lowercase
+5. Type classes - uppercase
+6. Modules - uppercase 
+
+### Typeclassess
+
+Equivalent to `interface` or `protocol` in other languages,
+Usually a collection of methods supported grouped under a name.
+
 ### Top level expressions
 
  The interactive environment ghci would lead you to believe that you can punch some expressions into an .hs file and run the thing (in a similar fashion to languages like swift and ruby). This is not the case.
@@ -130,6 +148,7 @@ e.g.
 * There is no order of execution (lazy)
 
 * Order of evaluation is present in `do`.
+
 
 ### Checking if given term/type is part of typeclass
 
@@ -190,7 +209,8 @@ There are three main ways:
 4. Generalized Algebraic data types `GADTs` with `data + where` keywords
 
 
-
+normal constructor application has
+higher precedence than infix constructor application (thus `a : Foo a` parses `a : (Foo a))`
 #### Algebraic data types uisng `data`
 
 ```
@@ -294,15 +314,49 @@ Recursive type synonyms are not allowed i.e.
 
 When using newtype, you're restricted to just one constructor with one field.(See `N` and `t` below)
 
+Why newtype? (better alternative to type alias)
+Direct correspondence with field type(isomorphic).
+Newtype guarantees that there is no overhead for using it, and that it is operationally equivalent to the thing it wraps.
+e.g. 
+```hs
+-- direct correspondence with Name type is string type
+-- no other constructors or fields possible.
+newtype Name = Name String
+```
+
+```hs
+type MyCharArray = [Char]
+
+myname :: MyCharArray
+myname = "afdaf"
+
+name :: [Char]
+name = "simplename"
+
+take 3 name -- works over string
+
+-- also works over type alias
+take 3 myname
+
+-- with newtype
+newtype MyNewTypeCharArray = MyNewTypeCharArray [Char]
+
+mynewytpename :: MyNewTypeCharArray
+mynewytpename = MyNewTypeCharArray "adfaf"
+
+-- will not typecheck with newtype
+take 3 mynewytpename
+```
+
 A declaration of the form `newtype cx => T u1 … uk = N t` introduces a new type whose representation is the same as an existing type. The type `(T u1… uk)` renames the datatype `t`.
 
 YOu can think of `N` as NewConstructor.
 The constructor `N` in an expression coerces a value from type `t` to type `(T u1 … uk)`. 
 Using `N` in a pattern coerces a value from type `(T u1 … uk)` to type `t`.
 
+But if you use newtype, Haskell knows that you're just using it to wrap an existing type into a new type (hence the name), because you want it to be the same internally but have a different type. With that in mind, Haskell can get rid of the wrapping and unwrapping once it resolves which value is of what type.
+
 Unlike algebraic datatypes, the newtype constructor `N` is unlifted, so that `N ⊥` is the same as `⊥`.
-
-
 
 The following examples clarify the differences between data (algebraic datatypes), type (type synonyms), and newtype (renaming types.) Given the declarations
 ```hs
@@ -321,7 +375,7 @@ Both newtype and the single-constructor data introduce a single value constructo
 ```hs
 data D = D Int
 newtype N = N Int
-```hs
+```
 Then `N undefined` is equivalent to `undefined` and causes an error when evaluated. But `D undefined` is not equivalent to undefined, and it can be evaluated as long as you don't try to peek inside.
 
 
@@ -345,6 +399,26 @@ data Maybe a where
    Just :: a -> Maybe a
 ```
 This syntax is made available by the language option `{-#LANGUAGE GADTs #-}`. It should be familiar to you in that it closely resembles the syntax of type class declarations. It's also easy to remember if you already like to think of constructors as just being functions. Each constructor is just defined by a type signature.
+
+### Data constructors vs Type Constructors
+
+In a data declaration, a `type constructor` is the thing on the left hand side of the equals sign. The `data constructor(s)` are the things on the right hand side of the equals sign. 
+
+You use type constructors where a type is expected, and you use data constructors where a value is expected.
+
+```hs
+-- Colour is a Type constructor, Red/Green/Blue are data constructors.
+data Colour = Red | Green | Blue
+```
+
+If you'd want to construct a binary tree to store Strings, you could imagine doing something like
+
+```hs
+-- SBTree is a type constructor, and Leaf/Branch are data constructor functions that produce values of type SBTree
+data SBTree = Leaf String
+            | Branch String SBTree SBTree
+```
+What we see here is a type SBTree that contains two data constructors. In other words, there are two functions (namely Leaf and Branch) that will construct values of the SBTree type. If you're not familiar with how binary trees work, just hang in there. You don't actually need to know how binary trees work, only that this one stores Strings in some way.
 
 
 
